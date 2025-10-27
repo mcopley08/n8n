@@ -205,13 +205,13 @@
                 if (Array.isArray(obj)) {
                     obj.forEach(item => traverse(item));
                 } else if (typeof obj === 'object') {
-                    // If this object has an id, it's a doc item
-                    if (obj.id && obj.type) {
+                    // If this object has an id and slug, it's a doc item
+                    if (obj.id && obj.slug && obj.type) {
                         items.push({
                             id: obj.id,
                             title: obj.title || 'Untitled',
                             type: obj.type,
-                            slug: obj.slug || '',
+                            slug: obj.slug,
                             meta: obj.meta || ''
                         });
                     }
@@ -234,14 +234,17 @@
             return items;
         }
 
-        async function fetchNode(projectId, nodeId, token) {
-            const url = `https://stoplight.io/api/v1/projects/${projectId}/nodes/${nodeId}`;
+        async function fetchNode(projectId, slug, token) {
+            // IMPORTANT: Use slug, not id!
+            const url = `https://stoplight.io/api/v1/projects/${projectId}/nodes/${slug}`;
 
             const response = await fetch(url, {
                 headers: {
                     'accept': '*/*',
                     'authorization': `Bearer ${token}`,
                     'origin': 'https://developer.buildops.com',
+                    'referer': 'https://developer.buildops.com/',
+                    'stoplight-elements-version': '3.0.8',
                 }
             });
 
@@ -284,9 +287,9 @@
             }
 
             // Request body
-            if (data.request?.body?.content) {
+            if (data.requestBody?.content) {
                 md += `## Request Body\n\n`;
-                for (const [contentType, content] of Object.entries(data.request.body.content)) {
+                for (const [contentType, content] of Object.entries(data.requestBody.content)) {
                     md += `**Content-Type:** ${contentType}\n\n`;
                     if (content.schema) {
                         md += '```json\n' + JSON.stringify(content.schema, null, 2) + '\n```\n\n';
@@ -300,7 +303,9 @@
                 md += `| Name | Type | Required | Description |\n`;
                 md += `|------|------|----------|-------------|\n`;
                 data.parameters.forEach(param => {
-                    md += `| ${param.name} | ${param.in} | ${param.required ? 'Yes' : 'No'} | ${param.description || ''} |\n`;
+                    const required = param.required ? 'Yes' : 'No';
+                    const description = (param.description || '').replace(/\|/g, '\\|');
+                    md += `| ${param.name} | ${param.in} | ${required} | ${description} |\n`;
                 });
                 md += '\n';
             }
@@ -333,7 +338,7 @@
                     for (const [propName, propData] of Object.entries(data.properties)) {
                         const required = data.required?.includes(propName) ? 'Yes' : 'No';
                         const type = propData.type || propData.$ref || 'unknown';
-                        const desc = propData.description || '';
+                        const desc = (propData.description || '').replace(/\|/g, '\\|');
                         md += `| ${propName} | ${type} | ${required} | ${desc} |\n`;
                     }
                     md += '\n';
@@ -385,13 +390,15 @@
 
             for (const item of items) {
                 try {
-                    log(`Downloading: ${item.title} (${item.id})`, 'info');
+                    log(`Downloading: ${item.title}`, 'info');
+                    log(`  Using slug: ${item.slug}`, 'info');
 
-                    const nodeData = await fetchNode(projectId, item.id, token);
+                    // CRITICAL FIX: Use slug instead of id
+                    const nodeData = await fetchNode(projectId, item.slug, token);
                     const markdown = convertToMarkdown(item, nodeData);
 
                     // Store the markdown with a sanitized filename
-                    const filename = `${item.slug || item.id}.md`;
+                    const filename = `${item.slug}.md`;
                     downloadedDocs[filename] = {
                         markdown: markdown,
                         item: item,
