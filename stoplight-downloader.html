@@ -22,6 +22,25 @@
         }
         h1 { color: #333; margin-bottom: 10px; font-size: 28px; }
         .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .alert {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+        .alert strong { color: #856404; }
+        .code-block {
+            background: #2d2d2d;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
         .input-group { margin-bottom: 20px; }
         label {
             display: block;
@@ -30,7 +49,7 @@
             font-weight: 600;
             font-size: 14px;
         }
-        input[type="text"], input[type="file"] {
+        input[type="text"], input[type="file"], textarea {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -38,11 +57,15 @@
             font-size: 14px;
             font-family: monospace;
         }
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
         input[type="file"] {
             padding: 10px;
             font-family: inherit;
         }
-        input:focus { outline: none; border-color: #667eea; }
+        input:focus, textarea:focus { outline: none; border-color: #667eea; }
         .button-group { display: flex; gap: 10px; margin-top: 20px; }
         button {
             flex: 1;
@@ -98,6 +121,8 @@
             font-size: 14px;
             line-height: 1.6;
         }
+        .instructions ol { margin-left: 20px; margin-top: 10px; }
+        .instructions li { margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -105,17 +130,30 @@
         <h1>📚 Stoplight Documentation Downloader</h1>
         <p class="subtitle">Upload table of contents JSON and download all docs as Markdown</p>
 
+        <div class="alert">
+            <strong>⚠️ IMPORTANT - CORS Issue Fixed!</strong><br>
+            This file MUST be served from a web server (not opened as file://).<br><br>
+
+            <strong>Quick Setup:</strong><br>
+            1. Open terminal in this file's directory<br>
+            2. Run: <code style="background: #2d2d2d; color: #4ec9b0; padding: 2px 8px; border-radius: 3px;">python3 -m http.server 8000</code><br>
+            3. Open: <a href="http://localhost:8000/stoplight-downloader.html" target="_blank">http://localhost:8000/stoplight-downloader.html</a>
+        </div>
+
         <div class="instructions">
-            <strong>📋 Instructions:</strong><br>
-            1. Upload your table of contents JSON file<br>
-            2. Enter your Bearer token<br>
-            3. Click "Download All Docs" to fetch and convert everything<br>
-            4. Download the complete package as a ZIP file
+            <strong>📋 Instructions:</strong>
+            <ol>
+                <li>Make sure you're accessing this page via http:// (not file://)</li>
+                <li>Paste your table of contents JSON below</li>
+                <li>Enter your Bearer token</li>
+                <li>Click "Download All Docs"</li>
+                <li>Download the ZIP package when complete</li>
+            </ol>
         </div>
 
         <div class="input-group">
-            <label for="tocFile">📄 Table of Contents JSON File:</label>
-            <input type="file" id="tocFile" accept=".json" />
+            <label for="tocJson">📄 Table of Contents JSON (paste here):</label>
+            <textarea id="tocJson" placeholder='{"data":{"items":[...]}}'></textarea>
         </div>
 
         <div class="input-group">
@@ -157,6 +195,16 @@
         let downloadedDocs = {};
         let startTime = 0;
 
+        // Check if we're running from file:// and warn
+        if (window.location.protocol === 'file:') {
+            const logEl = document.getElementById('log');
+            logEl.innerHTML = '<div class="log-entry error">❌ ERROR: This page is opened as file://</div>' +
+                '<div class="log-entry error">CORS will block all API requests!</div>' +
+                '<div class="log-entry warning">Please run a local web server and access via http://</div>' +
+                '<div class="log-entry info">Run: python3 -m http.server 8000</div>' +
+                '<div class="log-entry info">Then open: http://localhost:8000/stoplight-downloader.html</div>';
+        }
+
         function log(message, type = 'info') {
             const logEl = document.getElementById('log');
             const entry = document.createElement('div');
@@ -173,28 +221,6 @@
             const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             document.getElementById('duration').textContent = `${elapsed}s`;
         }
-
-        // Handle file upload
-        document.getElementById('tocFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                try {
-                    tocData = JSON.parse(event.target.result);
-                    log(`✓ Loaded TOC file: ${file.name}`, 'success');
-
-                    // Count total items
-                    const items = extractAllItems(tocData);
-                    log(`Found ${items.length} total items`, 'info');
-                } catch (error) {
-                    log(`✗ Error parsing JSON: ${error.message}`, 'error');
-                    tocData = null;
-                }
-            };
-            reader.readAsText(file);
-        });
 
         function extractAllItems(toc, items = []) {
             const data = toc.data || toc;
@@ -235,21 +261,22 @@
         }
 
         async function fetchNode(projectId, slug, token) {
-            // IMPORTANT: Use slug, not id!
             const url = `https://stoplight.io/api/v1/projects/${projectId}/nodes/${slug}`;
 
             const response = await fetch(url, {
+                method: 'GET',
                 headers: {
                     'accept': '*/*',
                     'authorization': `Bearer ${token}`,
-                    'origin': 'https://developer.buildops.com',
-                    'referer': 'https://developer.buildops.com/',
                     'stoplight-elements-version': '3.0.8',
-                }
+                },
+                mode: 'cors',
+                credentials: 'omit'
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+                const text = await response.text();
+                throw new Error(`HTTP ${response.status}: ${text}`);
             }
 
             return response.json();
@@ -304,7 +331,7 @@
                 md += `|------|------|----------|-------------|\n`;
                 data.parameters.forEach(param => {
                     const required = param.required ? 'Yes' : 'No';
-                    const description = (param.description || '').replace(/\|/g, '\\|');
+                    const description = (param.description || '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
                     md += `| ${param.name} | ${param.in} | ${required} | ${description} |\n`;
                 });
                 md += '\n';
@@ -338,7 +365,7 @@
                     for (const [propName, propData] of Object.entries(data.properties)) {
                         const required = data.required?.includes(propName) ? 'Yes' : 'No';
                         const type = propData.type || propData.$ref || 'unknown';
-                        const desc = (propData.description || '').replace(/\|/g, '\\|');
+                        const desc = (propData.description || '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
                         md += `| ${propName} | ${type} | ${required} | ${desc} |\n`;
                     }
                     md += '\n';
@@ -355,8 +382,18 @@
         }
 
         async function startDownload() {
-            if (!tocData) {
-                alert('Please upload a table of contents JSON file first!');
+            const tocJson = document.getElementById('tocJson').value.trim();
+
+            if (!tocJson) {
+                alert('Please paste the table of contents JSON!');
+                return;
+            }
+
+            try {
+                tocData = JSON.parse(tocJson);
+            } catch (error) {
+                alert('Invalid JSON! Please check your table of contents data.');
+                log(`Error parsing JSON: ${error.message}`, 'error');
                 return;
             }
 
@@ -380,6 +417,7 @@
             startTime = Date.now();
 
             log('🚀 Starting download...', 'info');
+            log(`Origin: ${window.location.origin}`, 'info');
 
             const items = extractAllItems(tocData);
             log(`Found ${items.length} items to download`, 'info');
@@ -390,14 +428,11 @@
 
             for (const item of items) {
                 try {
-                    log(`Downloading: ${item.title}`, 'info');
-                    log(`  Using slug: ${item.slug}`, 'info');
+                    log(`Downloading: ${item.title} (${item.slug})`, 'info');
 
-                    // CRITICAL FIX: Use slug instead of id
                     const nodeData = await fetchNode(projectId, item.slug, token);
                     const markdown = convertToMarkdown(item, nodeData);
 
-                    // Store the markdown with a sanitized filename
                     const filename = `${item.slug}.md`;
                     downloadedDocs[filename] = {
                         markdown: markdown,
