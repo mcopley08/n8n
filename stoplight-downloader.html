@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stoplight Documentation Downloader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: monospace;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .log {
+            margin-top: 30px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+        }
+
+        .log-entry.success { color: #4caf50; }
+        .log-entry.error { color: #f44336; }
+        .log-entry.warning { color: #ff9800; }
+        .log-entry.info { color: #2196f3; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            text-transform: uppercase;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .instructions ol {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Stoplight Documentation Downloader</h1>
+        <p class="subtitle">Download all documentation from Stoplight-powered API docs</p>
+
+        <div class="instructions">
+            <strong>📋 How to get your token:</strong>
+            <ol>
+                <li>Open <a href="https://developer.buildops.com" target="_blank">developer.buildops.com</a></li>
+                <li>Open DevTools (F12 or Cmd+Option+I)</li>
+                <li>Go to Network tab</li>
+                <li>Refresh the page and look for requests to "stoplight.io"</li>
+                <li>Click on any request and copy the "Authorization" header value</li>
+                <li>Paste it below (it should start with "eyJ...")</li>
+            </ol>
+        </div>
+
+        <div class="input-group">
+            <label for="token">🔑 Bearer Token:</label>
+            <input type="text" id="token" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+        </div>
+
+        <div class="button-group">
+            <button id="downloadBtn" onclick="startDownload()">🚀 Start Download</button>
+            <button id="saveBtn" onclick="saveData()" disabled>💾 Save Files</button>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="nodeCount">0</div>
+                <div class="stat-label">Nodes Downloaded</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="duration">0s</div>
+                <div class="stat-label">Duration</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="status">Ready</div>
+                <div class="stat-label">Status</div>
+            </div>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const PROJECT_ID = 'cHJqOjI4NDA4Mw';
+        const BASE_URL = 'https://stoplight.io/api/v1';
+
+        let downloadedData = {
+            nodes: {},
+            toc: null,
+            project: null,
+            manifest: {}
+        };
+
+        let startTime = 0;
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+
+        function updateStats(nodeCount, duration, status) {
+            document.getElementById('stats').style.display = 'grid';
+            document.getElementById('nodeCount').textContent = nodeCount;
+            document.getElementById('duration').textContent = duration;
+            document.getElementById('status').textContent = status;
+        }
+
+        async function fetchAPI(url, token) {
+            const response = await fetch(url, {
+                headers: {
+                    'accept': '*/*',
+                    'authorization': `Bearer ${token}`,
+                    'origin': 'https://developer.buildops.com',
+                    'stoplight-elements-version': '3.0.8',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            return response.json();
+        }
+
+        function extractNodeIds(obj, ids = new Set()) {
+            if (!obj || typeof obj !== 'object') return ids;
+
+            if (obj.id && typeof obj.id === 'string' && obj.id.length > 5) {
+                ids.add(obj.id);
+            }
+
+            if (obj.uri && typeof obj.uri === 'string') {
+                const match = obj.uri.match(/\/nodes\/([^\/\?]+)/);
+                if (match) ids.add(match[1]);
+            }
+
+            const containerProps = ['children', 'items', 'nodes', 'entries', 'data', 'toc', 'tree'];
+            for (const prop of containerProps) {
+                if (Array.isArray(obj[prop])) {
+                    obj[prop].forEach(item => extractNodeIds(item, ids));
+                } else if (obj[prop]) {
+                    extractNodeIds(obj[prop], ids);
+                }
+            }
+
+            return ids;
+        }
+
+        async function startDownload() {
+            const token = document.getElementById('token').value.trim();
+
+            if (!token) {
+                alert('Please enter your Bearer token!');
+                return;
+            }
+
+            if (!token.startsWith('eyJ')) {
+                alert('Invalid token format. Token should start with "eyJ"');
+                return;
+            }
+
+            document.getElementById('downloadBtn').disabled = true;
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('log').innerHTML = '';
+
+            startTime = Date.now();
+            updateStats(0, '0s', 'Starting...');
+
+            log('🚀 Starting download...', 'info');
+
+            let nodeIds = new Set();
+
+            // Get table of contents
+            try {
+                log('📋 Fetching table of contents...', 'info');
+                downloadedData.toc = await fetchAPI(`${BASE_URL}/projects/${PROJECT_ID}/table-of-contents`, token);
+                const tocIds = extractNodeIds(downloadedData.toc);
+                tocIds.forEach(id => nodeIds.add(id));
+                log(`✓ Found ${tocIds.size} nodes in TOC`, 'success');
+            } catch (error) {
+                log(`⚠️ Could not fetch TOC: ${error.message}`, 'warning');
+            }
+
+            // Get project info
+            try {
+                log('📦 Fetching project info...', 'info');
+                downloadedData.project = await fetchAPI(`${BASE_URL}/projects/${PROJECT_ID}`, token);
+                const projectIds = extractNodeIds(downloadedData.project);
+                projectIds.forEach(id => nodeIds.add(id));
+                log(`✓ Found ${projectIds.size} additional nodes`, 'success');
+            } catch (error) {
+                log(`⚠️ Could not fetch project: ${error.message}`, 'warning');
+            }
+
+            // Download all nodes
+            log(`📥 Downloading ${nodeIds.size} nodes...`, 'info');
+            updateStats(0, '0s', 'Downloading...');
+
+            let count = 0;
+            const total = nodeIds.size;
+
+            for (const nodeId of nodeIds) {
+                count++;
+                try {
+                    const url = `${BASE_URL}/projects/${PROJECT_ID}/nodes/${nodeId}`;
+                    downloadedData.nodes[nodeId] = await fetchAPI(url, token);
+
+                    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                    updateStats(count, `${elapsed}s`, `${count}/${total}`);
+
+                    if (count % 5 === 0 || count === total) {
+                        log(`Downloaded ${count}/${total} nodes`, 'info');
+                    }
+
+                    // Rate limiting
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                } catch (error) {
+                    log(`✗ Failed to download ${nodeId}: ${error.message}`, 'error');
+                }
+            }
+
+            // Create manifest
+            downloadedData.manifest = {
+                downloadDate: new Date().toISOString(),
+                projectId: PROJECT_ID,
+                totalNodes: nodeIds.size,
+                downloadedNodes: Object.keys(downloadedData.nodes).length,
+                duration: `${((Date.now() - startTime) / 1000).toFixed(1)}s`,
+            };
+
+            const duration = downloadedData.manifest.duration;
+            updateStats(Object.keys(downloadedData.nodes).length, duration, 'Complete');
+            log(`✅ Download complete! Downloaded ${Object.keys(downloadedData.nodes).length} nodes in ${duration}`, 'success');
+            log('💡 Click "Save Files" to download the data', 'info');
+
+            document.getElementById('downloadBtn').disabled = false;
+            document.getElementById('saveBtn').disabled = false;
+        }
+
+        function saveData() {
+            log('💾 Preparing downloads...', 'info');
+
+            // Download complete dataset
+            const blob = new Blob([JSON.stringify(downloadedData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stoplight-docs-complete-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            log('✓ Complete dataset downloaded', 'success');
+            log('✅ Done! Check your Downloads folder', 'success');
+        }
+
+        // Auto-fill token from URL parameter if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const tokenParam = urlParams.get('token');
+        if (tokenParam) {
+            document.getElementById('token').value = tokenParam;
+        }
+    </script>
+</body>
+</html>
