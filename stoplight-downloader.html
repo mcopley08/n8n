@@ -5,47 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stoplight Documentation Downloader</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             padding: 20px;
         }
-
         .container {
             background: white;
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
-            max-width: 800px;
-            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
         }
-
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-
-        .subtitle {
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 14px;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
+        h1 { color: #333; margin-bottom: 10px; font-size: 28px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .input-group { margin-bottom: 20px; }
         label {
             display: block;
             margin-bottom: 8px;
@@ -53,28 +30,20 @@
             font-weight: 600;
             font-size: 14px;
         }
-
-        input {
+        input[type="text"], input[type="file"] {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 6px;
             font-size: 14px;
             font-family: monospace;
-            transition: border-color 0.3s;
         }
-
-        input:focus {
-            outline: none;
-            border-color: #667eea;
+        input[type="file"] {
+            padding: 10px;
+            font-family: inherit;
         }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
+        input:focus { outline: none; border-color: #667eea; }
+        .button-group { display: flex; gap: 10px; margin-top: 20px; }
         button {
             flex: 1;
             padding: 14px 24px;
@@ -87,23 +56,8 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-
-        button:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
+        button:hover { background: #5568d3; transform: translateY(-2px); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
         .log {
             margin-top: 30px;
             background: #f5f5f5;
@@ -115,23 +69,17 @@
             font-size: 13px;
             line-height: 1.6;
         }
-
-        .log-entry {
-            margin-bottom: 5px;
-        }
-
+        .log-entry { margin-bottom: 5px; }
         .log-entry.success { color: #4caf50; }
         .log-entry.error { color: #f44336; }
         .log-entry.warning { color: #ff9800; }
         .log-entry.info { color: #2196f3; }
-
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 15px;
             margin-top: 20px;
         }
-
         .stat-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -139,19 +87,8 @@
             border-radius: 8px;
             text-align: center;
         }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            opacity: 0.9;
-            text-transform: uppercase;
-        }
-
+        .stat-value { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+        .stat-label { font-size: 12px; opacity: 0.9; text-transform: uppercase; }
         .instructions {
             background: #e3f2fd;
             border-left: 4px solid #2196f3;
@@ -161,73 +98,63 @@
             font-size: 14px;
             line-height: 1.6;
         }
-
-        .instructions ol {
-            margin-left: 20px;
-            margin-top: 10px;
-        }
-
-        .instructions li {
-            margin-bottom: 5px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📚 Stoplight Documentation Downloader</h1>
-        <p class="subtitle">Download all documentation from Stoplight-powered API docs</p>
+        <p class="subtitle">Upload table of contents JSON and download all docs as Markdown</p>
 
         <div class="instructions">
-            <strong>📋 How to get your token:</strong>
-            <ol>
-                <li>Open <a href="https://developer.buildops.com" target="_blank">developer.buildops.com</a></li>
-                <li>Open DevTools (F12 or Cmd+Option+I)</li>
-                <li>Go to Network tab</li>
-                <li>Refresh the page and look for requests to "stoplight.io"</li>
-                <li>Click on any request and copy the "Authorization" header value</li>
-                <li>Paste it below (it should start with "eyJ...")</li>
-            </ol>
+            <strong>📋 Instructions:</strong><br>
+            1. Upload your table of contents JSON file<br>
+            2. Enter your Bearer token<br>
+            3. Click "Download All Docs" to fetch and convert everything<br>
+            4. Download the complete package as a ZIP file
         </div>
 
         <div class="input-group">
-            <label for="token">🔑 Bearer Token:</label>
-            <input type="text" id="token" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+            <label for="tocFile">📄 Table of Contents JSON File:</label>
+            <input type="file" id="tocFile" accept=".json" />
+        </div>
+
+        <div class="input-group">
+            <label for="token">🔑 Authorization Token (Bearer):</label>
+            <input type="text" id="token" placeholder="Paste your bearer token here..." />
+        </div>
+
+        <div class="input-group">
+            <label for="projectId">📦 Project ID:</label>
+            <input type="text" id="projectId" value="cHJqOjI1ODM4Mw" placeholder="e.g., cHJqOjI1ODM4Mw" />
         </div>
 
         <div class="button-group">
-            <button id="downloadBtn" onclick="startDownload()">🚀 Start Download</button>
-            <button id="saveBtn" onclick="saveData()" disabled>💾 Save Files</button>
+            <button id="downloadBtn" onclick="startDownload()">🚀 Download All Docs</button>
+            <button id="saveBtn" onclick="savePackage()" disabled>💾 Download ZIP Package</button>
         </div>
 
         <div class="stats" id="stats" style="display: none;">
             <div class="stat-card">
-                <div class="stat-value" id="nodeCount">0</div>
-                <div class="stat-label">Nodes Downloaded</div>
+                <div class="stat-value" id="totalCount">0</div>
+                <div class="stat-label">Total Items</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="downloadedCount">0</div>
+                <div class="stat-label">Downloaded</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="duration">0s</div>
                 <div class="stat-label">Duration</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="status">Ready</div>
-                <div class="stat-label">Status</div>
             </div>
         </div>
 
         <div class="log" id="log"></div>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
-        const PROJECT_ID = 'cHJqOjI4NDA4Mw';
-        const BASE_URL = 'https://stoplight.io/api/v1';
-
-        let downloadedData = {
-            nodes: {},
-            toc: null,
-            project: null,
-            manifest: {}
-        };
-
+        let tocData = null;
+        let downloadedDocs = {};
         let startTime = 0;
 
         function log(message, type = 'info') {
@@ -237,23 +164,84 @@
             entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
             logEl.appendChild(entry);
             logEl.scrollTop = logEl.scrollHeight;
-            console.log(message);
         }
 
-        function updateStats(nodeCount, duration, status) {
+        function updateStats(total, downloaded) {
             document.getElementById('stats').style.display = 'grid';
-            document.getElementById('nodeCount').textContent = nodeCount;
-            document.getElementById('duration').textContent = duration;
-            document.getElementById('status').textContent = status;
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('downloadedCount').textContent = downloaded;
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            document.getElementById('duration').textContent = `${elapsed}s`;
         }
 
-        async function fetchAPI(url, token) {
+        // Handle file upload
+        document.getElementById('tocFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    tocData = JSON.parse(event.target.result);
+                    log(`✓ Loaded TOC file: ${file.name}`, 'success');
+
+                    // Count total items
+                    const items = extractAllItems(tocData);
+                    log(`Found ${items.length} total items`, 'info');
+                } catch (error) {
+                    log(`✗ Error parsing JSON: ${error.message}`, 'error');
+                    tocData = null;
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function extractAllItems(toc, items = []) {
+            const data = toc.data || toc;
+
+            function traverse(obj) {
+                if (!obj) return;
+
+                if (Array.isArray(obj)) {
+                    obj.forEach(item => traverse(item));
+                } else if (typeof obj === 'object') {
+                    // If this object has an id, it's a doc item
+                    if (obj.id && obj.type) {
+                        items.push({
+                            id: obj.id,
+                            title: obj.title || 'Untitled',
+                            type: obj.type,
+                            slug: obj.slug || '',
+                            meta: obj.meta || ''
+                        });
+                    }
+
+                    // Recursively check nested items
+                    if (obj.items) {
+                        traverse(obj.items);
+                    }
+
+                    // Check other properties
+                    for (const key in obj) {
+                        if (key !== 'items' && typeof obj[key] === 'object') {
+                            traverse(obj[key]);
+                        }
+                    }
+                }
+            }
+
+            traverse(data);
+            return items;
+        }
+
+        async function fetchNode(projectId, nodeId, token) {
+            const url = `https://stoplight.io/api/v1/projects/${projectId}/nodes/${nodeId}`;
+
             const response = await fetch(url, {
                 headers: {
                     'accept': '*/*',
                     'authorization': `Bearer ${token}`,
                     'origin': 'https://developer.buildops.com',
-                    'stoplight-elements-version': '3.0.8',
                 }
             });
 
@@ -264,144 +252,229 @@
             return response.json();
         }
 
-        function extractNodeIds(obj, ids = new Set()) {
-            if (!obj || typeof obj !== 'object') return ids;
+        function convertToMarkdown(item, nodeData) {
+            let md = '';
 
-            if (obj.id && typeof obj.id === 'string' && obj.id.length > 5) {
-                ids.add(obj.id);
+            // Title
+            md += `# ${item.title}\n\n`;
+
+            // Metadata
+            md += `**Type:** ${item.type}\n\n`;
+            if (item.meta) {
+                md += `**Method:** ${item.meta.toUpperCase()}\n\n`;
             }
 
-            if (obj.uri && typeof obj.uri === 'string') {
-                const match = obj.uri.match(/\/nodes\/([^\/\?]+)/);
-                if (match) ids.add(match[1]);
+            // Try to extract content from various places
+            const data = nodeData.data || nodeData;
+
+            // For HTTP operations
+            if (data.method && data.path) {
+                md += `## Endpoint\n\n`;
+                md += `\`${data.method.toUpperCase()} ${data.path}\`\n\n`;
             }
 
-            const containerProps = ['children', 'items', 'nodes', 'entries', 'data', 'toc', 'tree'];
-            for (const prop of containerProps) {
-                if (Array.isArray(obj[prop])) {
-                    obj[prop].forEach(item => extractNodeIds(item, ids));
-                } else if (obj[prop]) {
-                    extractNodeIds(obj[prop], ids);
+            // Description
+            if (data.description) {
+                md += `## Description\n\n${data.description}\n\n`;
+            }
+
+            // Summary
+            if (data.summary) {
+                md += `## Summary\n\n${data.summary}\n\n`;
+            }
+
+            // Request body
+            if (data.request?.body?.content) {
+                md += `## Request Body\n\n`;
+                for (const [contentType, content] of Object.entries(data.request.body.content)) {
+                    md += `**Content-Type:** ${contentType}\n\n`;
+                    if (content.schema) {
+                        md += '```json\n' + JSON.stringify(content.schema, null, 2) + '\n```\n\n';
+                    }
                 }
             }
 
-            return ids;
+            // Parameters
+            if (data.parameters && data.parameters.length > 0) {
+                md += `## Parameters\n\n`;
+                md += `| Name | Type | Required | Description |\n`;
+                md += `|------|------|----------|-------------|\n`;
+                data.parameters.forEach(param => {
+                    md += `| ${param.name} | ${param.in} | ${param.required ? 'Yes' : 'No'} | ${param.description || ''} |\n`;
+                });
+                md += '\n';
+            }
+
+            // Responses
+            if (data.responses) {
+                md += `## Responses\n\n`;
+                for (const [statusCode, response] of Object.entries(data.responses)) {
+                    md += `### ${statusCode}\n\n`;
+                    if (response.description) {
+                        md += `${response.description}\n\n`;
+                    }
+                    if (response.content) {
+                        for (const [contentType, content] of Object.entries(response.content)) {
+                            md += `**Content-Type:** ${contentType}\n\n`;
+                            if (content.schema) {
+                                md += '```json\n' + JSON.stringify(content.schema, null, 2) + '\n```\n\n';
+                            }
+                        }
+                    }
+                }
+            }
+
+            // For models/schemas
+            if (data.type === 'object' || data.properties) {
+                md += `## Properties\n\n`;
+                if (data.properties) {
+                    md += `| Property | Type | Required | Description |\n`;
+                    md += `|----------|------|----------|-------------|\n`;
+                    for (const [propName, propData] of Object.entries(data.properties)) {
+                        const required = data.required?.includes(propName) ? 'Yes' : 'No';
+                        const type = propData.type || propData.$ref || 'unknown';
+                        const desc = propData.description || '';
+                        md += `| ${propName} | ${type} | ${required} | ${desc} |\n`;
+                    }
+                    md += '\n';
+                }
+            }
+
+            // Add raw JSON as fallback if content seems empty
+            if (md.length < 200) {
+                md += `## Raw Data\n\n`;
+                md += '```json\n' + JSON.stringify(nodeData, null, 2) + '\n```\n\n';
+            }
+
+            return md;
         }
 
         async function startDownload() {
-            const token = document.getElementById('token').value.trim();
-
-            if (!token) {
-                alert('Please enter your Bearer token!');
+            if (!tocData) {
+                alert('Please upload a table of contents JSON file first!');
                 return;
             }
 
-            if (!token.startsWith('eyJ')) {
-                alert('Invalid token format. Token should start with "eyJ"');
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                alert('Please enter your authorization token!');
+                return;
+            }
+
+            const projectId = document.getElementById('projectId').value.trim();
+            if (!projectId) {
+                alert('Please enter the project ID!');
                 return;
             }
 
             document.getElementById('downloadBtn').disabled = true;
             document.getElementById('saveBtn').disabled = true;
             document.getElementById('log').innerHTML = '';
+            downloadedDocs = {};
 
             startTime = Date.now();
-            updateStats(0, '0s', 'Starting...');
 
             log('🚀 Starting download...', 'info');
 
-            let nodeIds = new Set();
+            const items = extractAllItems(tocData);
+            log(`Found ${items.length} items to download`, 'info');
+            updateStats(items.length, 0);
 
-            // Get table of contents
-            try {
-                log('📋 Fetching table of contents...', 'info');
-                downloadedData.toc = await fetchAPI(`${BASE_URL}/projects/${PROJECT_ID}/table-of-contents`, token);
-                const tocIds = extractNodeIds(downloadedData.toc);
-                tocIds.forEach(id => nodeIds.add(id));
-                log(`✓ Found ${tocIds.size} nodes in TOC`, 'success');
-            } catch (error) {
-                log(`⚠️ Could not fetch TOC: ${error.message}`, 'warning');
-            }
+            let downloaded = 0;
+            let failed = 0;
 
-            // Get project info
-            try {
-                log('📦 Fetching project info...', 'info');
-                downloadedData.project = await fetchAPI(`${BASE_URL}/projects/${PROJECT_ID}`, token);
-                const projectIds = extractNodeIds(downloadedData.project);
-                projectIds.forEach(id => nodeIds.add(id));
-                log(`✓ Found ${projectIds.size} additional nodes`, 'success');
-            } catch (error) {
-                log(`⚠️ Could not fetch project: ${error.message}`, 'warning');
-            }
-
-            // Download all nodes
-            log(`📥 Downloading ${nodeIds.size} nodes...`, 'info');
-            updateStats(0, '0s', 'Downloading...');
-
-            let count = 0;
-            const total = nodeIds.size;
-
-            for (const nodeId of nodeIds) {
-                count++;
+            for (const item of items) {
                 try {
-                    const url = `${BASE_URL}/projects/${PROJECT_ID}/nodes/${nodeId}`;
-                    downloadedData.nodes[nodeId] = await fetchAPI(url, token);
+                    log(`Downloading: ${item.title} (${item.id})`, 'info');
 
-                    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-                    updateStats(count, `${elapsed}s`, `${count}/${total}`);
+                    const nodeData = await fetchNode(projectId, item.id, token);
+                    const markdown = convertToMarkdown(item, nodeData);
 
-                    if (count % 5 === 0 || count === total) {
-                        log(`Downloaded ${count}/${total} nodes`, 'info');
-                    }
+                    // Store the markdown with a sanitized filename
+                    const filename = `${item.slug || item.id}.md`;
+                    downloadedDocs[filename] = {
+                        markdown: markdown,
+                        item: item,
+                        rawData: nodeData
+                    };
+
+                    downloaded++;
+                    updateStats(items.length, downloaded);
+                    log(`✓ Success: ${item.title}`, 'success');
 
                     // Rate limiting
                     await new Promise(resolve => setTimeout(resolve, 300));
+
                 } catch (error) {
-                    log(`✗ Failed to download ${nodeId}: ${error.message}`, 'error');
+                    failed++;
+                    log(`✗ Failed: ${item.title} - ${error.message}`, 'error');
                 }
             }
 
-            // Create manifest
-            downloadedData.manifest = {
-                downloadDate: new Date().toISOString(),
-                projectId: PROJECT_ID,
-                totalNodes: nodeIds.size,
-                downloadedNodes: Object.keys(downloadedData.nodes).length,
-                duration: `${((Date.now() - startTime) / 1000).toFixed(1)}s`,
-            };
-
-            const duration = downloadedData.manifest.duration;
-            updateStats(Object.keys(downloadedData.nodes).length, duration, 'Complete');
-            log(`✅ Download complete! Downloaded ${Object.keys(downloadedData.nodes).length} nodes in ${duration}`, 'success');
-            log('💡 Click "Save Files" to download the data', 'info');
+            const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+            log('', 'info');
+            log(`✅ Download complete!`, 'success');
+            log(`   Downloaded: ${downloaded}/${items.length}`, 'success');
+            log(`   Failed: ${failed}`, failed > 0 ? 'error' : 'success');
+            log(`   Duration: ${duration}s`, 'info');
+            log('', 'info');
+            log('💡 Click "Download ZIP Package" to save all files', 'info');
 
             document.getElementById('downloadBtn').disabled = false;
             document.getElementById('saveBtn').disabled = false;
         }
 
-        function saveData() {
-            log('💾 Preparing downloads...', 'info');
+        async function savePackage() {
+            if (Object.keys(downloadedDocs).length === 0) {
+                alert('No documents to save! Please download first.');
+                return;
+            }
 
-            // Download complete dataset
-            const blob = new Blob([JSON.stringify(downloadedData, null, 2)], { type: 'application/json' });
+            log('📦 Creating ZIP package...', 'info');
+
+            const zip = new JSZip();
+
+            // Add all markdown files
+            for (const [filename, doc] of Object.entries(downloadedDocs)) {
+                zip.file(filename, doc.markdown);
+            }
+
+            // Add a README
+            const readme = `# Stoplight Documentation Export
+
+Downloaded: ${new Date().toISOString()}
+Total files: ${Object.keys(downloadedDocs).length}
+
+## Contents
+
+${Object.entries(downloadedDocs).map(([filename, doc]) =>
+    `- ${filename} - ${doc.item.title} (${doc.item.type})`
+).join('\n')}
+`;
+            zip.file('README.md', readme);
+
+            // Add raw JSON data folder
+            const jsonFolder = zip.folder('raw-json');
+            for (const [filename, doc] of Object.entries(downloadedDocs)) {
+                const jsonFilename = filename.replace('.md', '.json');
+                jsonFolder.file(jsonFilename, JSON.stringify(doc.rawData, null, 2));
+            }
+
+            // Generate ZIP
+            log('Generating ZIP file...', 'info');
+            const blob = await zip.generateAsync({ type: 'blob' });
+
+            // Download
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `stoplight-docs-complete-${Date.now()}.json`;
+            a.download = `stoplight-docs-${Date.now()}.zip`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            log('✓ Complete dataset downloaded', 'success');
-            log('✅ Done! Check your Downloads folder', 'success');
-        }
-
-        // Auto-fill token from URL parameter if present
-        const urlParams = new URLSearchParams(window.location.search);
-        const tokenParam = urlParams.get('token');
-        if (tokenParam) {
-            document.getElementById('token').value = tokenParam;
+            log('✅ ZIP package downloaded!', 'success');
         }
     </script>
 </body>
