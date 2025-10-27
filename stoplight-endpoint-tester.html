@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stoplight Endpoint Tester</title>
+    <style>
+        body {
+            font-family: monospace;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+        }
+        h1 { color: #4ec9b0; }
+        .input-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #9cdcfe;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            background: #2d2d2d;
+            border: 1px solid #3e3e3e;
+            color: #d4d4d4;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover { background: #1177bb; }
+        .result {
+            background: #2d2d2d;
+            border: 1px solid #3e3e3e;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            max-height: 500px;
+            overflow: auto;
+        }
+        .success { border-left: 4px solid #4ec9b0; }
+        .error { border-left: 4px solid #f48771; }
+        pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; }
+        .endpoint { color: #ce9178; }
+        .status-200 { color: #4ec9b0; }
+        .status-error { color: #f48771; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Stoplight Endpoint Tester</h1>
+    <p>Find out which API endpoints actually work</p>
+
+    <div class="input-group">
+        <label>🔑 Bearer Token:</label>
+        <input type="text" id="token" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." />
+    </div>
+
+    <div class="input-group">
+        <label>📝 Known Node ID (from URL):</label>
+        <input type="text" id="nodeId" value="y7hndq02qrzak-authentication-authorization-and-scope"
+               placeholder="e.g., y7hndq02qrzak-authentication-authorization-and-scope" />
+    </div>
+
+    <div>
+        <button onclick="testAllEndpoints()">🚀 Test All Endpoints</button>
+        <button onclick="testSingleNode()">📄 Test Single Node</button>
+        <button onclick="findNodesInDOM()">🔎 Find Nodes in Page DOM</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const PROJECT_ID = 'cHJqOjI4NDA4Mw';
+        const BASE_URL = 'https://stoplight.io/api/v1';
+
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        async function testEndpoint(url, description) {
+            const token = document.getElementById('token').value.trim();
+
+            log(`<div>Testing: <span class="endpoint">${description}</span><br>URL: ${url}</div>`, 'info');
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'accept': '*/*',
+                        'authorization': `Bearer ${token}`,
+                        'origin': 'https://developer.buildops.com',
+                        'stoplight-elements-version': '3.0.8',
+                    }
+                });
+
+                const contentType = response.headers.get('content-type');
+                let data;
+
+                if (contentType && contentType.includes('application/json')) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+
+                if (response.ok) {
+                    log(`<div class="status-200">✅ SUCCESS (${response.status})</div><pre>${JSON.stringify(data, null, 2).substring(0, 1000)}...</pre>`, 'success');
+                    return { success: true, data };
+                } else {
+                    log(`<div class="status-error">❌ FAILED (${response.status})</div><pre>${JSON.stringify(data, null, 2)}</pre>`, 'error');
+                    return { success: false, status: response.status };
+                }
+            } catch (error) {
+                log(`<div class="status-error">❌ ERROR</div><pre>${error.message}</pre>`, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testAllEndpoints() {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                alert('Please enter a token first!');
+                return;
+            }
+
+            document.getElementById('results').innerHTML = '';
+
+            const endpoints = [
+                [`${BASE_URL}/projects/${PROJECT_ID}`, 'Project Info'],
+                [`${BASE_URL}/projects/${PROJECT_ID}/table-of-contents`, 'Table of Contents'],
+                [`${BASE_URL}/projects/${PROJECT_ID}/toc`, 'TOC (short)'],
+                [`${BASE_URL}/projects/${PROJECT_ID}/nodes`, 'List Nodes'],
+                [`${BASE_URL}/projects/${PROJECT_ID}/tree`, 'Project Tree'],
+                [`${BASE_URL}/projects/${PROJECT_ID}/branches`, 'List Branches'],
+                [`${BASE_URL}/projects/${PROJECT_ID}/branches/YnI6MTA0OTgxOTc`, 'Branch Info'],
+                [`${BASE_URL}/projects/${PROJECT_ID}/versions`, 'List Versions'],
+                [`${BASE_URL}/workspaces/169105/projects/${PROJECT_ID}`, 'Workspace Project'],
+            ];
+
+            for (const [url, description] of endpoints) {
+                await testEndpoint(url, description);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            log('<h3>✨ Testing complete! Check results above.</h3>', 'info');
+        }
+
+        async function testSingleNode() {
+            const token = document.getElementById('token').value.trim();
+            const nodeId = document.getElementById('nodeId').value.trim();
+
+            if (!token) {
+                alert('Please enter a token first!');
+                return;
+            }
+
+            if (!nodeId) {
+                alert('Please enter a node ID!');
+                return;
+            }
+
+            document.getElementById('results').innerHTML = '';
+
+            const url = `${BASE_URL}/projects/${PROJECT_ID}/nodes/${nodeId}`;
+            const result = await testEndpoint(url, `Single Node: ${nodeId}`);
+
+            if (result.success) {
+                // Try to extract links to other nodes
+                const data = result.data;
+                log('<h3>🔗 Analyzing node for links to other nodes...</h3>', 'info');
+
+                const nodeIds = new Set();
+                extractNodeIds(data, nodeIds);
+
+                if (nodeIds.size > 0) {
+                    log(`<div>Found ${nodeIds.size} potential node IDs:<br><pre>${Array.from(nodeIds).join('\n')}</pre></div>`, 'success');
+                } else {
+                    log('<div>No additional node IDs found in this node</div>', 'info');
+                }
+            }
+        }
+
+        function extractNodeIds(obj, ids = new Set(), path = '') {
+            if (!obj || typeof obj !== 'object') return ids;
+
+            // Look for common patterns
+            if (obj.id && typeof obj.id === 'string' && obj.id.match(/^[a-z0-9-_]+$/i)) {
+                ids.add(obj.id);
+            }
+
+            if (obj.slug && typeof obj.slug === 'string') {
+                ids.add(obj.slug);
+            }
+
+            if (obj.uri && typeof obj.uri === 'string') {
+                const match = obj.uri.match(/\/nodes\/([^\/\?]+)/);
+                if (match) ids.add(match[1]);
+            }
+
+            if (obj.srn && typeof obj.srn === 'string') {
+                const match = obj.srn.match(/\/nodes\/([^\/\?]+)/);
+                if (match) ids.add(match[1]);
+            }
+
+            // Recursively search
+            for (const [key, value] of Object.entries(obj)) {
+                if (typeof value === 'object' && value !== null) {
+                    extractNodeIds(value, ids, `${path}.${key}`);
+                }
+            }
+
+            return ids;
+        }
+
+        function findNodesInDOM() {
+            log('<h3>🔎 Searching current page DOM for node references...</h3>', 'info');
+
+            const nodeIds = new Set();
+
+            // Method 1: Find in scripts
+            const scripts = document.getElementsByTagName('script');
+            for (const script of scripts) {
+                const matches = script.textContent.matchAll(/nodes\/([a-z0-9-_]+)/gi);
+                for (const match of matches) {
+                    nodeIds.add(match[1]);
+                }
+            }
+
+            // Method 2: Find in data attributes
+            const allElements = document.querySelectorAll('[data-node-id], [data-id], [href*="nodes/"]');
+            allElements.forEach(el => {
+                if (el.dataset.nodeId) nodeIds.add(el.dataset.nodeId);
+                if (el.dataset.id) nodeIds.add(el.dataset.id);
+                if (el.href) {
+                    const match = el.href.match(/nodes\/([^\/\?]+)/);
+                    if (match) nodeIds.add(match[1]);
+                }
+            });
+
+            // Method 3: Check window object for Stoplight data
+            if (window.__STOPLIGHT_DATA__) {
+                extractNodeIds(window.__STOPLIGHT_DATA__, nodeIds);
+            }
+
+            if (nodeIds.size > 0) {
+                log(`<div class="status-200">Found ${nodeIds.size} node IDs in DOM:<br><pre>${Array.from(nodeIds).join('\n')}</pre></div>`, 'success');
+
+                // Offer to test these
+                log(`<div><button onclick="testFoundNodes(${JSON.stringify(Array.from(nodeIds))})">Test These Nodes</button></div>`, 'info');
+            } else {
+                log('<div class="status-error">No node IDs found in current page DOM. Make sure you\'re running this on developer.buildops.com</div>', 'error');
+            }
+        }
+
+        async function testFoundNodes(nodeIds) {
+            const token = document.getElementById('token').value.trim();
+            if (!token) {
+                alert('Please enter a token first!');
+                return;
+            }
+
+            log(`<h3>Testing ${nodeIds.length} discovered nodes...</h3>`, 'info');
+
+            let successCount = 0;
+            const workingNodes = [];
+
+            for (const nodeId of nodeIds.slice(0, 10)) { // Test first 10
+                const url = `${BASE_URL}/projects/${PROJECT_ID}/nodes/${nodeId}`;
+                const result = await testEndpoint(url, nodeId);
+
+                if (result.success) {
+                    successCount++;
+                    workingNodes.push(nodeId);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            log(`<h3>✅ ${successCount} nodes working out of ${Math.min(10, nodeIds.length)} tested</h3>`, 'success');
+
+            if (workingNodes.length > 0) {
+                log(`<div>Working nodes:<br><pre>${workingNodes.join('\n')}</pre></div>`, 'success');
+            }
+        }
+    </script>
+</body>
+</html>

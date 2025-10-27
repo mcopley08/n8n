@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stoplight Documentation Crawler</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 { color: #333; margin-bottom: 10px; font-size: 28px; }
+        .subtitle { color: #666; margin-bottom: 30px; font-size: 14px; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #555; font-weight: 600; font-size: 14px; }
+        input, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: monospace;
+        }
+        textarea { min-height: 100px; resize: vertical; }
+        input:focus, textarea:focus { outline: none; border-color: #667eea; }
+        .button-group { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+        button {
+            padding: 14px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover { background: #5568d3; transform: translateY(-2px); }
+        button:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+        .log {
+            margin-top: 30px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            padding: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .log-entry { margin-bottom: 5px; }
+        .log-entry.success { color: #4caf50; }
+        .log-entry.error { color: #f44336; }
+        .log-entry.warning { color: #ff9800; }
+        .log-entry.info { color: #2196f3; }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+        .stat-label { font-size: 12px; opacity: 0.9; text-transform: uppercase; }
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .alert {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🕷️ Stoplight Documentation Crawler</h1>
+        <p class="subtitle">Crawl documentation by starting from known node IDs</p>
+
+        <div class="alert">
+            <strong>⚡ Quick Start:</strong> This crawler works by starting from one or more known documentation pages
+            and discovering more pages by following internal links. Much more reliable than trying to find a TOC endpoint!
+        </div>
+
+        <div class="input-group">
+            <label for="token">🔑 Bearer Token:</label>
+            <input type="text" id="token" placeholder="Paste your token here..." />
+        </div>
+
+        <div class="input-group">
+            <label for="startNodes">📍 Starting Node IDs (one per line):</label>
+            <textarea id="startNodes" placeholder="Enter node IDs to start crawling from, e.g.:
+y7hndq02qrzak-authentication-authorization-and-scope
+api-domains-overview
+...">y7hndq02qrzak-authentication-authorization-and-scope</textarea>
+            <small style="color: #666; margin-top: 5px; display: block;">
+                💡 Tip: Open documentation pages in your browser and look at the URLs.
+                The node ID is usually the last part of the URL.
+            </small>
+        </div>
+
+        <div class="button-group">
+            <button id="crawlBtn" onclick="startCrawl()">🚀 Start Crawling</button>
+            <button id="saveBtn" onclick="saveData()" disabled>💾 Save Files</button>
+            <button onclick="extractNodesFromWebsite()">🔎 Extract from Website</button>
+        </div>
+
+        <div class="stats" id="stats" style="display: none;">
+            <div class="stat-card">
+                <div class="stat-value" id="nodeCount">0</div>
+                <div class="stat-label">Nodes Downloaded</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="queueSize">0</div>
+                <div class="stat-label">In Queue</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="duration">0s</div>
+                <div class="stat-label">Duration</div>
+            </div>
+        </div>
+
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const PROJECT_ID = 'cHJqOjI4NDA4Mw';
+        const BASE_URL = 'https://stoplight.io/api/v1';
+
+        let downloadedData = { nodes: {}, manifest: {} };
+        let startTime = 0;
+        let processedNodes = new Set();
+        let nodeQueue = new Set();
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logEl.appendChild(entry);
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function updateStats() {
+            document.getElementById('stats').style.display = 'grid';
+            document.getElementById('nodeCount').textContent = Object.keys(downloadedData.nodes).length;
+            document.getElementById('queueSize').textContent = nodeQueue.size;
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            document.getElementById('duration').textContent = `${elapsed}s`;
+        }
+
+        async function fetchAPI(url, token) {
+            const response = await fetch(url, {
+                headers: {
+                    'accept': '*/*',
+                    'authorization': `Bearer ${token}`,
+                    'origin': 'https://developer.buildops.com',
+                    'stoplight-elements-version': '3.0.8',
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            return response.json();
+        }
+
+        function extractNodeIds(obj, ids = new Set()) {
+            if (!obj || typeof obj !== 'object') return ids;
+
+            // Look for node IDs in common properties
+            if (obj.id && typeof obj.id === 'string' && obj.id.match(/^[a-z0-9-_]+$/i) && obj.id.length > 10) {
+                ids.add(obj.id);
+            }
+
+            if (obj.slug && typeof obj.slug === 'string') {
+                ids.add(obj.slug);
+            }
+
+            if (obj.uri && typeof obj.uri === 'string') {
+                const match = obj.uri.match(/\/nodes\/([^\/\?]+)/);
+                if (match) ids.add(match[1]);
+            }
+
+            if (obj.srn && typeof obj.srn === 'string') {
+                const match = obj.srn.match(/\/nodes\/([^\/\?]+)/);
+                if (match) ids.add(match[1]);
+            }
+
+            // Recursively search arrays and objects
+            for (const value of Object.values(obj)) {
+                if (Array.isArray(value)) {
+                    value.forEach(item => extractNodeIds(item, ids));
+                } else if (typeof value === 'object' && value !== null) {
+                    extractNodeIds(value, ids);
+                }
+            }
+
+            return ids;
+        }
+
+        async function fetchNode(nodeId, token) {
+            if (processedNodes.has(nodeId)) {
+                return null;
+            }
+
+            try {
+                const url = `${BASE_URL}/projects/${PROJECT_ID}/nodes/${nodeId}`;
+                const data = await fetchAPI(url, token);
+                downloadedData.nodes[nodeId] = data;
+                processedNodes.add(nodeId);
+
+                // Extract new node IDs from this node
+                const newNodeIds = extractNodeIds(data);
+                let addedCount = 0;
+
+                for (const newId of newNodeIds) {
+                    if (!processedNodes.has(newId) && !nodeQueue.has(newId)) {
+                        nodeQueue.add(newId);
+                        addedCount++;
+                    }
+                }
+
+                if (addedCount > 0) {
+                    log(`✓ Downloaded ${nodeId} (found ${addedCount} new nodes)`, 'success');
+                } else {
+                    log(`✓ Downloaded ${nodeId}`, 'success');
+                }
+
+                return data;
+            } catch (error) {
+                log(`✗ Failed: ${nodeId} - ${error.message}`, 'error');
+                processedNodes.add(nodeId); // Don't retry
+                return null;
+            }
+        }
+
+        async function startCrawl() {
+            const token = document.getElementById('token').value.trim();
+            const startNodesText = document.getElementById('startNodes').value.trim();
+
+            if (!token) {
+                alert('Please enter your Bearer token!');
+                return;
+            }
+
+            if (!startNodesText) {
+                alert('Please enter at least one starting node ID!');
+                return;
+            }
+
+            // Parse starting nodes
+            const startNodes = startNodesText.split('\n')
+                .map(line => line.trim())
+                .filter(line => line && !line.startsWith('#'));
+
+            if (startNodes.length === 0) {
+                alert('No valid node IDs found!');
+                return;
+            }
+
+            // Reset state
+            downloadedData = { nodes: {}, manifest: {} };
+            processedNodes = new Set();
+            nodeQueue = new Set(startNodes);
+
+            document.getElementById('crawlBtn').disabled = true;
+            document.getElementById('saveBtn').disabled = true;
+            document.getElementById('log').innerHTML = '';
+
+            startTime = Date.now();
+            updateStats();
+
+            log(`🚀 Starting crawl from ${startNodes.length} starting nodes...`, 'info');
+            log(`Starting nodes: ${startNodes.join(', ')}`, 'info');
+
+            // Crawl loop
+            while (nodeQueue.size > 0) {
+                const nodeId = nodeQueue.values().next().value;
+                nodeQueue.delete(nodeId);
+
+                await fetchNode(nodeId, token);
+                updateStats();
+
+                // Rate limiting
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            // Create manifest
+            downloadedData.manifest = {
+                downloadDate: new Date().toISOString(),
+                projectId: PROJECT_ID,
+                startingNodes: startNodes,
+                totalNodes: Object.keys(downloadedData.nodes).length,
+                duration: `${((Date.now() - startTime) / 1000).toFixed(1)}s`,
+            };
+
+            const duration = downloadedData.manifest.duration;
+            log(`✅ Crawl complete! Downloaded ${Object.keys(downloadedData.nodes).length} nodes in ${duration}`, 'success');
+            log('💡 Click "Save Files" to download', 'info');
+
+            document.getElementById('crawlBtn').disabled = false;
+            document.getElementById('saveBtn').disabled = false;
+        }
+
+        function saveData() {
+            log('💾 Preparing download...', 'info');
+
+            const blob = new Blob([JSON.stringify(downloadedData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `stoplight-docs-crawled-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            log('✓ File downloaded!', 'success');
+        }
+
+        function extractNodesFromWebsite() {
+            const instructions = `
+📋 How to extract node IDs from the website:
+
+1. Open https://developer.buildops.com in a new tab
+2. Right-click anywhere and select "Inspect" or press F12
+3. Go to the Console tab
+4. Paste this code and press Enter:
+
+// Extract all node IDs from the page
+const nodeIds = new Set();
+document.querySelectorAll('a[href*="/docs/"]').forEach(link => {
+    const match = link.href.match(/\\/docs\\/[^\\/]+\\/([^\\/\\?#]+)/);
+    if (match) nodeIds.add(match[1]);
+});
+console.log(Array.from(nodeIds).join('\\n'));
+copy(Array.from(nodeIds).join('\\n'));
+
+5. The node IDs will be copied to your clipboard
+6. Paste them into the "Starting Node IDs" field above
+7. Click "Start Crawling"
+            `.trim();
+
+            alert(instructions);
+            log('📋 Instructions displayed for extracting nodes from website', 'info');
+        }
+    </script>
+</body>
+</html>
