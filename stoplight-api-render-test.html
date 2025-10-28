@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Service Agreement - API Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #24292e;
+            background: #f6f8fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .endpoint-header {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .method-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-right: 10px;
+        }
+
+        .method-post {
+            background: #49cc90;
+            color: white;
+        }
+
+        .endpoint-path {
+            font-size: 24px;
+            font-weight: 600;
+            color: #24292e;
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        .endpoint-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #24292e;
+        }
+
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e1e4e8;
+        }
+
+        .property-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .property-table th {
+            text-align: left;
+            padding: 12px;
+            background: #f6f8fa;
+            font-weight: 600;
+            font-size: 13px;
+            color: #586069;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e1e4e8;
+        }
+
+        .property-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e1e4e8;
+            vertical-align: top;
+        }
+
+        .property-name {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-weight: 600;
+            color: #0366d6;
+            font-size: 14px;
+        }
+
+        .property-type {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #f1f8ff;
+            color: #0366d6;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .property-format {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #fff5b1;
+            color: #735c0f;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+
+        .nested-schema {
+            margin-left: 20px;
+            padding-left: 15px;
+            border-left: 3px solid #e1e4e8;
+            margin-top: 10px;
+        }
+
+        .schema-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #24292e;
+        }
+
+        .code-block {
+            background: #f6f8fa;
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid #e1e4e8;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .code-block code {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            color: #24292e;
+        }
+
+        .response-code {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #28a745;
+            color: white;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .property-required {
+            color: #d73a49;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .mock-url {
+            background: #f1f8ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border-left: 4px solid #0366d6;
+        }
+
+        .mock-url strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #0366d6;
+        }
+
+        .mock-url code {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Endpoint Header -->
+        <div class="endpoint-header">
+            <h1 class="endpoint-title">Create Service Agreement</h1>
+            <div style="margin-top: 20px;">
+                <span class="method-badge method-post">POST</span>
+                <span class="endpoint-path">/v1/service-agreements</span>
+            </div>
+            <div class="mock-url">
+                <strong>Mock Server URL</strong>
+                <code>https://stoplight.io/mocks/buildops/service-agreements-workbook/523634887</code>
+            </div>
+        </div>
+
+        <!-- Request Body Section -->
+        <div class="section">
+            <h2 class="section-title">Request Body</h2>
+            <div class="schema-title">CreateServiceAgreementRequest</div>
+
+            <table class="property-table">
+                <thead>
+                    <tr>
+                        <th style="width: 200px;">Property</th>
+                        <th style="width: 150px;">Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="property-name">customerId</span></td>
+                        <td>
+                            <span class="property-type">string</span>
+                            <span class="property-format">uuid</span>
+                        </td>
+                        <td>Customer identifier</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">billingCustomerId</span></td>
+                        <td>
+                            <span class="property-type">string</span>
+                            <span class="property-format">uuid</span>
+                        </td>
+                        <td>Billing customer identifier</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">startDate</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Service agreement start date</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">endDate</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Service agreement end date</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">status</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Status of the service agreement</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">termPrice</span></td>
+                        <td><span class="property-type">number</span></td>
+                        <td>Total price for the agreement term</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">agreementName</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Name of the service agreement</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">agreementNumber</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Unique agreement number</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">customerPoNumber</span></td>
+                        <td><span class="property-type">string | null</span></td>
+                        <td>Customer purchase order number (nullable)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">departmentId</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Department identifier</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">rateCard</span></td>
+                        <td><span class="property-type">object</span></td>
+                        <td>Rate card configuration</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">soldById</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Identifier of the sales person</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">annualContractValue</span></td>
+                        <td><span class="property-type">number</span></td>
+                        <td>Annual contract value</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">pricebookId</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Pricebook identifier</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">propertyBudgetBundleMode</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Property budget bundle mode setting</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">serviceAgreementTypeId</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Service agreement type identifier</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">projectManagerId</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Project manager identifier</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">accountManagerId</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Account manager identifier</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="nested-schema">
+                <div class="schema-title">rateCard (object)</div>
+                <table class="property-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 200px;">Property</th>
+                            <th style="width: 150px;">Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="property-name">labourPricebookId</span></td>
+                            <td><span class="property-type">string</span></td>
+                            <td>Labour pricebook identifier</td>
+                        </tr>
+                        <tr>
+                            <td><span class="property-name">materialMarkupPricebookId</span></td>
+                            <td><span class="property-type">string</span></td>
+                            <td>Material markup pricebook identifier</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Response Section -->
+        <div class="section">
+            <h2 class="section-title">Response</h2>
+            <div><span class="response-code">200 OK</span></div>
+            <div class="schema-title">ServiceAgreement</div>
+
+            <table class="property-table">
+                <thead>
+                    <tr>
+                        <th style="width: 250px;">Property</th>
+                        <th style="width: 150px;">Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="property-name">id</span></td>
+                        <td>
+                            <span class="property-type">string</span>
+                            <span class="property-format">uuid</span>
+                        </td>
+                        <td>Unique service agreement identifier</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">agreementName</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Name of the service agreement</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">customerId</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Customer identifier</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">tenantId</span></td>
+                        <td>
+                            <span class="property-type">string</span>
+                            <span class="property-format">uuid</span>
+                        </td>
+                        <td>Tenant identifier</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">entityType</span></td>
+                        <td><span class="property-type">string</span></td>
+                        <td>Entity type classification</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">version</span></td>
+                        <td><span class="property-type">number</span></td>
+                        <td>Version number of the service agreement</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">isActive</span></td>
+                        <td><span class="property-type">boolean</span></td>
+                        <td>Indicates if the service agreement is active</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">advancedSchedulingState</span></td>
+                        <td><span class="property-type">string | null</span></td>
+                        <td>Advanced scheduling state (nullable)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">billingType</span></td>
+                        <td><span class="property-type">string | null</span></td>
+                        <td>Billing type classification (nullable)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">propertyRecurringInvoiceBundleMode</span></td>
+                        <td><span class="property-type">string | null</span></td>
+                        <td>Property recurring invoice bundle mode (nullable)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">propertyBudgetBundleMode</span></td>
+                        <td><span class="property-type">string | null</span></td>
+                        <td>Property budget bundle mode (nullable)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">addingMaintenanceJobsStatus</span></td>
+                        <td><span class="property-type">string | null</span></td>
+                        <td>Status of adding maintenance jobs (nullable)</td>
+                    </tr>
+                    <tr>
+                        <td><span class="property-name">audit</span></td>
+                        <td><span class="property-type">object</span></td>
+                        <td>Audit information for tracking changes</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="nested-schema">
+                <div class="schema-title">audit (AuditInfo)</div>
+                <table class="property-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 250px;">Property</th>
+                            <th style="width: 150px;">Type</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="property-name">createdBy</span></td>
+                            <td><span class="property-type">UserAuditInfo</span></td>
+                            <td>User who created the record</td>
+                        </tr>
+                        <tr>
+                            <td><span class="property-name">createdDate</span></td>
+                            <td><span class="property-type">string | null</span></td>
+                            <td>Creation date (nullable)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="property-name">createdDateTime</span></td>
+                            <td><span class="property-type">number | null</span></td>
+                            <td>Creation date/time as timestamp (nullable)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="property-name">deletedBy</span></td>
+                            <td><span class="property-type">UserAuditInfo</span></td>
+                            <td>User who deleted the record</td>
+                        </tr>
+                        <tr>
+                            <td><span class="property-name">deletedDate</span></td>
+                            <td><span class="property-type">string | null</span></td>
+                            <td>Deletion date (nullable)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="property-name">deletedDateTime</span></td>
+                            <td><span class="property-type">number | null</span></td>
+                            <td>Deletion date/time as timestamp (nullable)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="property-name">lastUpdatedBy</span></td>
+                            <td><span class="property-type">UserAuditInfo</span></td>
+                            <td>User who last updated the record</td>
+                        </tr>
+                        <tr>
+                            <td><span class="property-name">lastUpdatedDate</span></td>
+                            <td><span class="property-type">string | null</span></td>
+                            <td>Last update date (nullable)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="property-name">lastUpdatedDateTime</span></td>
+                            <td><span class="property-type">number | null</span></td>
+                            <td>Last update date/time as timestamp (nullable)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="nested-schema">
+                    <div class="schema-title">UserAuditInfo (object)</div>
+                    <table class="property-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 250px;">Property</th>
+                                <th style="width: 150px;">Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="property-name">username</span></td>
+                                <td><span class="property-type">string | null</span></td>
+                                <td>Username of the user (nullable)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
