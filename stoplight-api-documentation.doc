@@ -1,0 +1,290 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Create Service Agreement - API Documentation</title>
+</head>
+<body>
+
+<h1>Create Service Agreement</h1>
+
+<p><strong>Method:</strong> POST</p>
+<p><strong>Endpoint:</strong> /v1/service-agreements</p>
+<p><strong>Mock Server URL:</strong> https://stoplight.io/mocks/buildops/service-agreements-workbook/523634887</p>
+
+<hr>
+
+<h2>Request Body</h2>
+
+<h3>CreateServiceAgreementRequest</h3>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr>
+<th align="left"><strong>Property</strong></th>
+<th align="left"><strong>Type</strong></th>
+<th align="left"><strong>Description</strong></th>
+</tr>
+<tr>
+<td>customerId</td>
+<td>string (uuid)</td>
+<td>Customer identifier</td>
+</tr>
+<tr>
+<td>billingCustomerId</td>
+<td>string (uuid)</td>
+<td>Billing customer identifier</td>
+</tr>
+<tr>
+<td>startDate</td>
+<td>string</td>
+<td>Service agreement start date</td>
+</tr>
+<tr>
+<td>endDate</td>
+<td>string</td>
+<td>Service agreement end date</td>
+</tr>
+<tr>
+<td>status</td>
+<td>string</td>
+<td>Status of the service agreement</td>
+</tr>
+<tr>
+<td>termPrice</td>
+<td>number</td>
+<td>Total price for the agreement term</td>
+</tr>
+<tr>
+<td>agreementName</td>
+<td>string</td>
+<td>Name of the service agreement</td>
+</tr>
+<tr>
+<td>agreementNumber</td>
+<td>string</td>
+<td>Unique agreement number</td>
+</tr>
+<tr>
+<td>customerPoNumber</td>
+<td>string | null</td>
+<td>Customer purchase order number (nullable)</td>
+</tr>
+<tr>
+<td>departmentId</td>
+<td>string</td>
+<td>Department identifier</td>
+</tr>
+<tr>
+<td>rateCard</td>
+<td>object</td>
+<td>Rate card configuration</td>
+</tr>
+<tr>
+<td>soldById</td>
+<td>string</td>
+<td>Identifier of the sales person</td>
+</tr>
+<tr>
+<td>annualContractValue</td>
+<td>number</td>
+<td>Annual contract value</td>
+</tr>
+<tr>
+<td>pricebookId</td>
+<td>string</td>
+<td>Pricebook identifier</td>
+</tr>
+<tr>
+<td>propertyBudgetBundleMode</td>
+<td>string</td>
+<td>Property budget bundle mode setting</td>
+</tr>
+<tr>
+<td>serviceAgreementTypeId</td>
+<td>string</td>
+<td>Service agreement type identifier</td>
+</tr>
+<tr>
+<td>projectManagerId</td>
+<td>string</td>
+<td>Project manager identifier</td>
+</tr>
+<tr>
+<td>accountManagerId</td>
+<td>string</td>
+<td>Account manager identifier</td>
+</tr>
+</table>
+
+<h4>rateCard (object)</h4>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr>
+<th align="left"><strong>Property</strong></th>
+<th align="left"><strong>Type</strong></th>
+<th align="left"><strong>Description</strong></th>
+</tr>
+<tr>
+<td>labourPricebookId</td>
+<td>string</td>
+<td>Labour pricebook identifier</td>
+</tr>
+<tr>
+<td>materialMarkupPricebookId</td>
+<td>string</td>
+<td>Material markup pricebook identifier</td>
+</tr>
+</table>
+
+<hr>
+
+<h2>Response</h2>
+
+<p><strong>Status Code:</strong> 200 OK</p>
+
+<h3>ServiceAgreement</h3>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr>
+<th align="left"><strong>Property</strong></th>
+<th align="left"><strong>Type</strong></th>
+<th align="left"><strong>Description</strong></th>
+</tr>
+<tr>
+<td>id</td>
+<td>string (uuid)</td>
+<td>Unique service agreement identifier</td>
+</tr>
+<tr>
+<td>agreementName</td>
+<td>string</td>
+<td>Name of the service agreement</td>
+</tr>
+<tr>
+<td>customerId</td>
+<td>string</td>
+<td>Customer identifier</td>
+</tr>
+<tr>
+<td>tenantId</td>
+<td>string (uuid)</td>
+<td>Tenant identifier</td>
+</tr>
+<tr>
+<td>entityType</td>
+<td>string</td>
+<td>Entity type classification</td>
+</tr>
+<tr>
+<td>version</td>
+<td>number</td>
+<td>Version number of the service agreement</td>
+</tr>
+<tr>
+<td>isActive</td>
+<td>boolean</td>
+<td>Indicates if the service agreement is active</td>
+</tr>
+<tr>
+<td>advancedSchedulingState</td>
+<td>string | null</td>
+<td>Advanced scheduling state (nullable)</td>
+</tr>
+<tr>
+<td>billingType</td>
+<td>string | null</td>
+<td>Billing type classification (nullable)</td>
+</tr>
+<tr>
+<td>propertyRecurringInvoiceBundleMode</td>
+<td>string | null</td>
+<td>Property recurring invoice bundle mode (nullable)</td>
+</tr>
+<tr>
+<td>propertyBudgetBundleMode</td>
+<td>string | null</td>
+<td>Property budget bundle mode (nullable)</td>
+</tr>
+<tr>
+<td>addingMaintenanceJobsStatus</td>
+<td>string | null</td>
+<td>Status of adding maintenance jobs (nullable)</td>
+</tr>
+<tr>
+<td>audit</td>
+<td>object</td>
+<td>Audit information for tracking changes</td>
+</tr>
+</table>
+
+<h4>audit (AuditInfo)</h4>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr>
+<th align="left"><strong>Property</strong></th>
+<th align="left"><strong>Type</strong></th>
+<th align="left"><strong>Description</strong></th>
+</tr>
+<tr>
+<td>createdBy</td>
+<td>UserAuditInfo</td>
+<td>User who created the record</td>
+</tr>
+<tr>
+<td>createdDate</td>
+<td>string | null</td>
+<td>Creation date (nullable)</td>
+</tr>
+<tr>
+<td>createdDateTime</td>
+<td>number | null</td>
+<td>Creation date/time as timestamp (nullable)</td>
+</tr>
+<tr>
+<td>deletedBy</td>
+<td>UserAuditInfo</td>
+<td>User who deleted the record</td>
+</tr>
+<tr>
+<td>deletedDate</td>
+<td>string | null</td>
+<td>Deletion date (nullable)</td>
+</tr>
+<tr>
+<td>deletedDateTime</td>
+<td>number | null</td>
+<td>Deletion date/time as timestamp (nullable)</td>
+</tr>
+<tr>
+<td>lastUpdatedBy</td>
+<td>UserAuditInfo</td>
+<td>User who last updated the record</td>
+</tr>
+<tr>
+<td>lastUpdatedDate</td>
+<td>string | null</td>
+<td>Last update date (nullable)</td>
+</tr>
+<tr>
+<td>lastUpdatedDateTime</td>
+<td>number | null</td>
+<td>Last update date/time as timestamp (nullable)</td>
+</tr>
+</table>
+
+<h4>UserAuditInfo (object)</h4>
+
+<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr>
+<th align="left"><strong>Property</strong></th>
+<th align="left"><strong>Type</strong></th>
+<th align="left"><strong>Description</strong></th>
+</tr>
+<tr>
+<td>username</td>
+<td>string | null</td>
+<td>Username of the user (nullable)</td>
+</tr>
+</table>
+
+</body>
+</html>
