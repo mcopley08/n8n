@@ -445,6 +445,75 @@
             return html;
         }
 
+        function renderDocSchemaTable(schema, data, processedRefs = new Set()) {
+            if (!schema || !schema.properties) return '';
+
+            let html = `<table border="1" cellpadding="8" cellspacing="0" width="100%" style="border-collapse: collapse; margin-top: 10px;">
+<tr style="background-color: #f6f8fa;">
+<th align="left" style="padding: 10px; width: 200px;"><strong>Property</strong></th>
+<th align="left" style="padding: 10px; width: 150px;"><strong>Type</strong></th>
+<th align="left" style="padding: 10px;"><strong>Description</strong></th>
+</tr>`;
+
+            const nestedSchemas = [];
+
+            for (const [propName, propData] of Object.entries(schema.properties)) {
+                let type = Array.isArray(propData.type) ? propData.type.join(' | ') : (propData.type || 'object');
+                const format = propData.format ? ` (${propData.format})` : '';
+                const desc = propData.description || '';
+
+                // Resolve $ref if present
+                let resolvedPropSchema = propData;
+                if (propData.$ref) {
+                    const refSchema = getBundledSchema(data, propData.$ref);
+                    if (refSchema) {
+                        resolvedPropSchema = refSchema;
+                        if (refSchema.title) {
+                            type = refSchema.title;
+                        }
+                        // Track nested object for later rendering
+                        if (refSchema.properties && !processedRefs.has(propData.$ref)) {
+                            processedRefs.add(propData.$ref);
+                            nestedSchemas.push({
+                                name: propName,
+                                title: refSchema.title || propName,
+                                schema: refSchema
+                            });
+                        }
+                    }
+                }
+
+                // Check if this is an object type with properties
+                if (resolvedPropSchema.properties && !propData.$ref) {
+                    nestedSchemas.push({
+                        name: propName,
+                        title: propName,
+                        schema: resolvedPropSchema
+                    });
+                }
+
+                html += `
+<tr>
+<td style="padding: 10px;"><strong>${propName}</strong></td>
+<td style="padding: 10px;">${type}${format}</td>
+<td style="padding: 10px;">${desc}</td>
+</tr>`;
+            }
+
+            html += `</table>`;
+
+            // Render nested schemas
+            for (const nested of nestedSchemas) {
+                html += `
+<div style="margin-left: 20px; margin-top: 15px; padding-left: 15px; border-left: 3px solid #e1e4e8;">
+<h4 style="margin-bottom: 10px;">${nested.title}</h4>
+${renderDocSchemaTable(nested.schema, data, processedRefs)}
+</div>`;
+            }
+
+            return html;
+        }
+
         function convertToDoc(item, nodeData) {
             const dataStr = nodeData.data;
             const data = typeof dataStr === 'string' ? parseDataString(dataStr) : dataStr;
@@ -461,19 +530,38 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>${item.title} - API Documentation</title>
+<style>
+body { font-family: Arial, sans-serif; line-height: 1.6; padding: 20px; }
+h1 { color: #24292e; font-size: 24px; margin-bottom: 10px; }
+h2 { color: #24292e; font-size: 20px; margin-top: 20px; margin-bottom: 10px; border-bottom: 2px solid #e1e4e8; padding-bottom: 5px; }
+h3 { color: #24292e; font-size: 16px; margin-top: 15px; margin-bottom: 10px; }
+h4 { color: #24292e; font-size: 14px; margin-top: 10px; margin-bottom: 5px; }
+p { margin: 5px 0; }
+table { border-collapse: collapse; width: 100%; margin: 10px 0; }
+th { background-color: #f6f8fa; padding: 10px; text-align: left; border: 1px solid #e1e4e8; }
+td { padding: 10px; border: 1px solid #e1e4e8; vertical-align: top; }
+.method-badge { display: inline-block; padding: 4px 12px; background-color: #49cc90; color: white; font-weight: bold; border-radius: 4px; font-size: 12px; }
+.endpoint-path { font-family: monospace; font-size: 18px; font-weight: bold; }
+.response-code { display: inline-block; padding: 4px 12px; background-color: #28a745; color: white; font-weight: bold; border-radius: 4px; }
+.mock-url { background-color: #f1f8ff; padding: 10px; border-left: 4px solid #0366d6; margin: 10px 0; }
+</style>
 </head>
 <body>
 
 <h1>${item.title}</h1>
 
-<p><strong>Method:</strong> ${method}</p>
-<p><strong>Endpoint:</strong> ${path}</p>`;
+<div style="margin: 20px 0;">
+<span class="method-badge">${method}</span>
+<span class="endpoint-path">${path}</span>
+</div>`;
 
             if (mockUrl) {
-                doc += `<p><strong>Mock Server URL:</strong> ${mockUrl}</p>`;
+                doc += `
+<div class="mock-url">
+<strong>Mock Server URL:</strong><br>
+<code>${mockUrl}</code>
+</div>`;
             }
-
-            doc += `\n<hr>\n`;
 
             // Request Body Section
             if (data.request?.body?.contents?.[0]?.schema) {
@@ -488,38 +576,12 @@
 
                 if (resolvedSchema) {
                     if (resolvedSchema.title) {
-                        doc += `\n<h3>${resolvedSchema.title}</h3>\n`;
+                        doc += `<h3>${resolvedSchema.title}</h3>\n`;
                     }
 
-                    if (resolvedSchema.properties) {
-                        doc += `\n<table border="1" cellpadding="8" cellspacing="0" width="100%">
-<tr>
-<th align="left"><strong>Property</strong></th>
-<th align="left"><strong>Type</strong></th>
-<th align="left"><strong>Description</strong></th>
-</tr>`;
-
-                        for (const [propName, propData] of Object.entries(resolvedSchema.properties)) {
-                            let type = Array.isArray(propData.type) ? propData.type.join(' | ') : (propData.type || 'object');
-                            if (propData.format) {
-                                type += ` (${propData.format})`;
-                            }
-                            const desc = propData.description || '';
-
-                            doc += `
-<tr>
-<td>${propName}</td>
-<td>${type}</td>
-<td>${desc}</td>
-</tr>`;
-                        }
-
-                        doc += `\n</table>\n`;
-                    }
+                    doc += renderDocSchemaTable(resolvedSchema, data);
                 }
             }
-
-            doc += `\n<hr>\n`;
 
             // Response Section
             if (data.responses && data.responses.length > 0) {
@@ -528,7 +590,7 @@
                 const response = data.responses[0];
                 const statusCode = response.code || '200';
 
-                doc += `\n<p><strong>Status Code:</strong> ${statusCode} ${response.description || 'OK'}</p>\n`;
+                doc += `<p><span class="response-code">${statusCode} ${response.description || 'OK'}</span></p>\n`;
 
                 const responseContent = response.contents?.[0];
 
@@ -541,34 +603,10 @@
 
                     if (responseSchema) {
                         if (responseSchema.title) {
-                            doc += `\n<h3>${responseSchema.title}</h3>\n`;
+                            doc += `<h3>${responseSchema.title}</h3>\n`;
                         }
 
-                        if (responseSchema.properties) {
-                            doc += `\n<table border="1" cellpadding="8" cellspacing="0" width="100%">
-<tr>
-<th align="left"><strong>Property</strong></th>
-<th align="left"><strong>Type</strong></th>
-<th align="left"><strong>Description</strong></th>
-</tr>`;
-
-                            for (const [propName, propData] of Object.entries(responseSchema.properties)) {
-                                let type = Array.isArray(propData.type) ? propData.type.join(' | ') : (propData.type || 'object');
-                                if (propData.format) {
-                                    type += ` (${propData.format})`;
-                                }
-                                const desc = propData.description || '';
-
-                                doc += `
-<tr>
-<td>${propName}</td>
-<td>${type}</td>
-<td>${desc}</td>
-</tr>`;
-                            }
-
-                            doc += `\n</table>\n`;
-                        }
+                        doc += renderDocSchemaTable(responseSchema, data);
                     }
                 }
             }
