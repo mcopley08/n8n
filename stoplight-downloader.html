@@ -144,7 +144,7 @@
             <strong>📋 Instructions:</strong>
             <ol>
                 <li>Make sure you're accessing this page via http:// (not file://)</li>
-                <li>Paste your table of contents JSON below</li>
+                <li>Upload your table of contents JSON file</li>
                 <li>Enter your Bearer token</li>
                 <li>Click "Download All Docs"</li>
                 <li>Download the ZIP package when complete</li>
@@ -152,8 +152,8 @@
         </div>
 
         <div class="input-group">
-            <label for="tocJson">📄 Table of Contents JSON (paste here):</label>
-            <textarea id="tocJson" placeholder='{"data":{"items":[...]}}'></textarea>
+            <label for="tocJson">📄 Table of Contents JSON File:</label>
+            <input type="file" id="tocJson" accept=".json,application/json" />
         </div>
 
         <div class="input-group">
@@ -578,10 +578,21 @@
         }
 
         async function startDownload() {
-            const tocJson = document.getElementById('tocJson').value.trim();
+            const tocFileInput = document.getElementById('tocJson');
+            const tocFile = tocFileInput.files[0];
 
-            if (!tocJson) {
-                alert('Please paste the table of contents JSON!');
+            if (!tocFile) {
+                alert('Please upload the table of contents JSON file!');
+                return;
+            }
+
+            // Read the file
+            let tocJson;
+            try {
+                tocJson = await tocFile.text();
+            } catch (error) {
+                alert('Error reading file! Please try again.');
+                log(`Error reading file: ${error.message}`, 'error');
                 return;
             }
 
