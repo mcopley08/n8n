@@ -128,7 +128,7 @@
 <body>
     <div class="container">
         <h1>📚 Stoplight Documentation Downloader</h1>
-        <p class="subtitle">Upload table of contents JSON and download all docs as Markdown</p>
+        <p class="subtitle">Upload table of contents JSON and download all docs as HTML + JSON</p>
 
         <div class="alert">
             <strong>⚠️ IMPORTANT - CORS Issue Fixed!</strong><br>
@@ -282,103 +282,167 @@
             return response.json();
         }
 
-        function convertToMarkdown(item, nodeData) {
-            let md = '';
+        function parseDataString(dataStr) {
+            try {
+                return JSON.parse(dataStr);
+            } catch (e) {
+                return null;
+            }
+        }
 
-            // Title
-            md += `# ${item.title}\n\n`;
+        function getBundledSchema(data, ref) {
+            if (!ref || !ref.startsWith('#/__bundled__/')) return null;
+            const id = ref.split('/').pop();
+            return data.__bundled__?.[id];
+        }
 
-            // Metadata
-            md += `**Type:** ${item.type}\n\n`;
-            if (item.meta) {
-                md += `**Method:** ${item.meta.toUpperCase()}\n\n`;
+        function renderSchemaTable(schema, data, title = '') {
+            if (!schema || !schema.properties) return '';
+
+            let html = title ? `<div class="schema-title">${title}</div>` : '';
+            html += `<table class="property-table">
+                <thead>
+                    <tr>
+                        <th style="width: 250px;">Property</th>
+                        <th style="width: 150px;">Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            for (const [propName, propData] of Object.entries(schema.properties)) {
+                const required = schema.required?.includes(propName) ? 'Yes' : 'No';
+                let type = Array.isArray(propData.type) ? propData.type.join(' | ') : (propData.type || 'object');
+                const format = propData.format ? `<span class="property-format">${propData.format}</span>` : '';
+                const desc = propData.description || '';
+
+                // Resolve $ref if present
+                if (propData.$ref) {
+                    const refSchema = getBundledSchema(data, propData.$ref);
+                    if (refSchema?.title) {
+                        type = refSchema.title;
+                    }
+                }
+
+                html += `<tr>
+                    <td><span class="property-name">${propName}</span></td>
+                    <td><span class="property-type">${type}</span>${format}</td>
+                    <td>${desc}</td>
+                </tr>`;
             }
 
-            // Try to extract content from various places
-            const data = nodeData.data || nodeData;
+            html += `</tbody></table>`;
+            return html;
+        }
 
-            // For HTTP operations
-            if (data.method && data.path) {
-                md += `## Endpoint\n\n`;
-                md += `\`${data.method.toUpperCase()} ${data.path}\`\n\n`;
+        function convertToHTML(item, nodeData) {
+            const dataStr = nodeData.data;
+            const data = typeof dataStr === 'string' ? parseDataString(dataStr) : dataStr;
+
+            if (!data) {
+                return `<html><body><h1>Error parsing data</h1><pre>${JSON.stringify(nodeData, null, 2)}</pre></body></html>`;
             }
 
-            // Description
-            if (data.description) {
-                md += `## Description\n\n${data.description}\n\n`;
+            const method = data.method?.toUpperCase() || item.meta?.toUpperCase() || 'GET';
+            const methodClass = method.toLowerCase();
+            const path = data.path || '';
+            const mockUrl = nodeData.links?.mock_url || '';
+
+            let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${item.title} - API Documentation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #24292e; background: #f6f8fa; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .endpoint-header { background: white; padding: 30px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .method-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: 600; font-size: 12px; text-transform: uppercase; margin-right: 10px; }
+        .method-post { background: #49cc90; color: white; }
+        .method-get { background: #61affe; color: white; }
+        .method-put { background: #fca130; color: white; }
+        .method-delete { background: #f93e3e; color: white; }
+        .method-patch { background: #50e3c2; color: white; }
+        .endpoint-path { font-size: 24px; font-weight: 600; color: #24292e; font-family: 'Monaco', monospace; }
+        .endpoint-title { font-size: 32px; font-weight: 700; margin-bottom: 10px; color: #24292e; }
+        .section { background: white; padding: 30px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e1e4e8; }
+        .property-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .property-table th { text-align: left; padding: 12px; background: #f6f8fa; font-weight: 600; font-size: 13px; color: #586069; text-transform: uppercase; border-bottom: 2px solid #e1e4e8; }
+        .property-table td { padding: 12px; border-bottom: 1px solid #e1e4e8; vertical-align: top; }
+        .property-name { font-family: 'Monaco', monospace; font-weight: 600; color: #0366d6; font-size: 14px; }
+        .property-type { display: inline-block; padding: 2px 8px; background: #f1f8ff; color: #0366d6; border-radius: 3px; font-family: 'Monaco', monospace; font-size: 12px; font-weight: 500; }
+        .property-format { display: inline-block; padding: 2px 8px; background: #fff5b1; color: #735c0f; border-radius: 3px; font-family: 'Monaco', monospace; font-size: 11px; margin-left: 5px; }
+        .nested-schema { margin-left: 20px; padding-left: 15px; border-left: 3px solid #e1e4e8; margin-top: 10px; }
+        .schema-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; color: #24292e; }
+        .response-code { display: inline-block; padding: 4px 12px; background: #28a745; color: white; border-radius: 4px; font-weight: 600; font-size: 14px; margin-bottom: 15px; }
+        .mock-url { background: #f1f8ff; padding: 15px; border-radius: 6px; margin-top: 15px; border-left: 4px solid #0366d6; }
+        .mock-url strong { display: block; margin-bottom: 5px; color: #0366d6; }
+        .mock-url code { font-family: 'Monaco', monospace; font-size: 13px; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="endpoint-header">
+            <h1 class="endpoint-title">${item.title}</h1>
+            <div style="margin-top: 20px;">
+                <span class="method-badge method-${methodClass}">${method}</span>
+                <span class="endpoint-path">${path}</span>
+            </div>`;
+
+            if (mockUrl) {
+                html += `<div class="mock-url">
+                    <strong>Mock Server URL</strong>
+                    <code>${mockUrl}</code>
+                </div>`;
             }
 
-            // Summary
-            if (data.summary) {
-                md += `## Summary\n\n${data.summary}\n\n`;
+            html += `</div>`;
+
+            // Request Body Section
+            if (data.request?.body?.contents?.[0]?.schema) {
+                const requestSchema = data.request.body.contents[0].schema;
+                let resolvedSchema = requestSchema;
+
+                if (requestSchema.$ref) {
+                    resolvedSchema = getBundledSchema(data, requestSchema.$ref);
+                }
+
+                if (resolvedSchema) {
+                    html += `<div class="section">
+                        <h2 class="section-title">Request Body</h2>
+                        ${renderSchemaTable(resolvedSchema, data, resolvedSchema.title || '')}
+                    </div>`;
+                }
             }
 
-            // Request body
-            if (data.requestBody?.content) {
-                md += `## Request Body\n\n`;
-                for (const [contentType, content] of Object.entries(data.requestBody.content)) {
-                    md += `**Content-Type:** ${contentType}\n\n`;
-                    if (content.schema) {
-                        md += '```json\n' + JSON.stringify(content.schema, null, 2) + '\n```\n\n';
+            // Response Section
+            if (data.responses && data.responses.length > 0) {
+                const response = data.responses[0];
+                const statusCode = response.code || '200';
+                const responseContent = response.contents?.[0];
+
+                if (responseContent?.schema) {
+                    let responseSchema = responseContent.schema;
+
+                    if (responseSchema.$ref) {
+                        responseSchema = getBundledSchema(data, responseSchema.$ref);
+                    }
+
+                    if (responseSchema) {
+                        html += `<div class="section">
+                            <h2 class="section-title">Response</h2>
+                            <div><span class="response-code">${statusCode} ${response.description || 'OK'}</span></div>
+                            ${renderSchemaTable(responseSchema, data, responseSchema.title || '')}
+                        </div>`;
                     }
                 }
             }
 
-            // Parameters
-            if (data.parameters && data.parameters.length > 0) {
-                md += `## Parameters\n\n`;
-                md += `| Name | Type | Required | Description |\n`;
-                md += `|------|------|----------|-------------|\n`;
-                data.parameters.forEach(param => {
-                    const required = param.required ? 'Yes' : 'No';
-                    const description = (param.description || '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
-                    md += `| ${param.name} | ${param.in} | ${required} | ${description} |\n`;
-                });
-                md += '\n';
-            }
-
-            // Responses
-            if (data.responses) {
-                md += `## Responses\n\n`;
-                for (const [statusCode, response] of Object.entries(data.responses)) {
-                    md += `### ${statusCode}\n\n`;
-                    if (response.description) {
-                        md += `${response.description}\n\n`;
-                    }
-                    if (response.content) {
-                        for (const [contentType, content] of Object.entries(response.content)) {
-                            md += `**Content-Type:** ${contentType}\n\n`;
-                            if (content.schema) {
-                                md += '```json\n' + JSON.stringify(content.schema, null, 2) + '\n```\n\n';
-                            }
-                        }
-                    }
-                }
-            }
-
-            // For models/schemas
-            if (data.type === 'object' || data.properties) {
-                md += `## Properties\n\n`;
-                if (data.properties) {
-                    md += `| Property | Type | Required | Description |\n`;
-                    md += `|----------|------|----------|-------------|\n`;
-                    for (const [propName, propData] of Object.entries(data.properties)) {
-                        const required = data.required?.includes(propName) ? 'Yes' : 'No';
-                        const type = propData.type || propData.$ref || 'unknown';
-                        const desc = (propData.description || '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
-                        md += `| ${propName} | ${type} | ${required} | ${desc} |\n`;
-                    }
-                    md += '\n';
-                }
-            }
-
-            // Add raw JSON as fallback if content seems empty
-            if (md.length < 200) {
-                md += `## Raw Data\n\n`;
-                md += '```json\n' + JSON.stringify(nodeData, null, 2) + '\n```\n\n';
-            }
-
-            return md;
+            html += `</div></body></html>`;
+            return html;
         }
 
         async function startDownload() {
@@ -431,11 +495,11 @@
                     log(`Downloading: ${item.title} (${item.slug})`, 'info');
 
                     const nodeData = await fetchNode(projectId, item.slug, token);
-                    const markdown = convertToMarkdown(item, nodeData);
+                    const html = convertToHTML(item, nodeData);
 
-                    const filename = `${item.slug}.md`;
+                    const filename = item.slug;
                     downloadedDocs[filename] = {
-                        markdown: markdown,
+                        html: html,
                         item: item,
                         rawData: nodeData
                     };
@@ -476,35 +540,65 @@
 
             const zip = new JSZip();
 
-            // Add all markdown files
+            // Create folders
+            const htmlFolder = zip.folder('html');
+            const jsonFolder = zip.folder('json');
+
+            // Add both HTML and JSON files for each document
             for (const [filename, doc] of Object.entries(downloadedDocs)) {
-                zip.file(filename, doc.markdown);
+                // HTML file
+                htmlFolder.file(`${filename}.html`, doc.html);
+                log(`  Added: html/${filename}.html`, 'info');
+
+                // JSON file
+                jsonFolder.file(`${filename}.json`, JSON.stringify(doc.rawData, null, 2));
+                log(`  Added: json/${filename}.json`, 'info');
             }
 
             // Add a README
             const readme = `# Stoplight Documentation Export
 
 Downloaded: ${new Date().toISOString()}
-Total files: ${Object.keys(downloadedDocs).length}
+Total documents: ${Object.keys(downloadedDocs).length}
 
-## Contents
+## Package Contents
+
+This ZIP contains two formats for each API endpoint:
+
+### HTML Files (html/)
+Formatted HTML pages that match the Stoplight documentation style.
+Open these files in any web browser to view the documentation.
+
+### JSON Files (json/)
+Raw JSON responses from the Stoplight API.
+These contain the complete data structure for each endpoint.
+
+## Document List
 
 ${Object.entries(downloadedDocs).map(([filename, doc]) =>
-    `- ${filename} - ${doc.item.title} (${doc.item.type})`
+    `- ${filename}
+  - Title: ${doc.item.title}
+  - Type: ${doc.item.type}
+  - Files: html/${filename}.html, json/${filename}.json`
 ).join('\n')}
+
+## How to Use
+
+1. **View HTML Documentation**: Open any file in the html/ folder with a web browser
+2. **Access Raw Data**: JSON files in the json/ folder contain complete API specifications
+3. **Import to Google Docs**: HTML files can be imported into Google Docs for further editing
+
+Generated by Stoplight Documentation Downloader
 `;
             zip.file('README.md', readme);
 
-            // Add raw JSON data folder
-            const jsonFolder = zip.folder('raw-json');
-            for (const [filename, doc] of Object.entries(downloadedDocs)) {
-                const jsonFilename = filename.replace('.md', '.json');
-                jsonFolder.file(jsonFilename, JSON.stringify(doc.rawData, null, 2));
-            }
-
             // Generate ZIP
             log('Generating ZIP file...', 'info');
-            const blob = await zip.generateAsync({ type: 'blob' });
+            const blob = await zip.generateAsync({
+                type: 'blob',
+                compression: 'DEFLATE',
+                compressionOptions: { level: 9 }
+            });
 
             // Download
             const url = URL.createObjectURL(blob);
@@ -517,6 +611,8 @@ ${Object.entries(downloadedDocs).map(([filename, doc]) =>
             URL.revokeObjectURL(url);
 
             log('✅ ZIP package downloaded!', 'success');
+            log(`   HTML files: ${Object.keys(downloadedDocs).length}`, 'success');
+            log(`   JSON files: ${Object.keys(downloadedDocs).length}`, 'success');
         }
     </script>
 </body>
