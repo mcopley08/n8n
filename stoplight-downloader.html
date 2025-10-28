@@ -445,6 +445,138 @@
             return html;
         }
 
+        function convertToDoc(item, nodeData) {
+            const dataStr = nodeData.data;
+            const data = typeof dataStr === 'string' ? parseDataString(dataStr) : dataStr;
+
+            if (!data) {
+                return `<html><body><h1>Error parsing data</h1></body></html>`;
+            }
+
+            const method = data.method?.toUpperCase() || item.meta?.toUpperCase() || 'GET';
+            const path = data.path || '';
+            const mockUrl = nodeData.links?.mock_url || '';
+
+            let doc = `<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>${item.title} - API Documentation</title>
+</head>
+<body>
+
+<h1>${item.title}</h1>
+
+<p><strong>Method:</strong> ${method}</p>
+<p><strong>Endpoint:</strong> ${path}</p>`;
+
+            if (mockUrl) {
+                doc += `<p><strong>Mock Server URL:</strong> ${mockUrl}</p>`;
+            }
+
+            doc += `\n<hr>\n`;
+
+            // Request Body Section
+            if (data.request?.body?.contents?.[0]?.schema) {
+                doc += `\n<h2>Request Body</h2>\n`;
+
+                const requestSchema = data.request.body.contents[0].schema;
+                let resolvedSchema = requestSchema;
+
+                if (requestSchema.$ref) {
+                    resolvedSchema = getBundledSchema(data, requestSchema.$ref);
+                }
+
+                if (resolvedSchema) {
+                    if (resolvedSchema.title) {
+                        doc += `\n<h3>${resolvedSchema.title}</h3>\n`;
+                    }
+
+                    if (resolvedSchema.properties) {
+                        doc += `\n<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr>
+<th align="left"><strong>Property</strong></th>
+<th align="left"><strong>Type</strong></th>
+<th align="left"><strong>Description</strong></th>
+</tr>`;
+
+                        for (const [propName, propData] of Object.entries(resolvedSchema.properties)) {
+                            let type = Array.isArray(propData.type) ? propData.type.join(' | ') : (propData.type || 'object');
+                            if (propData.format) {
+                                type += ` (${propData.format})`;
+                            }
+                            const desc = propData.description || '';
+
+                            doc += `
+<tr>
+<td>${propName}</td>
+<td>${type}</td>
+<td>${desc}</td>
+</tr>`;
+                        }
+
+                        doc += `\n</table>\n`;
+                    }
+                }
+            }
+
+            doc += `\n<hr>\n`;
+
+            // Response Section
+            if (data.responses && data.responses.length > 0) {
+                doc += `\n<h2>Response</h2>\n`;
+
+                const response = data.responses[0];
+                const statusCode = response.code || '200';
+
+                doc += `\n<p><strong>Status Code:</strong> ${statusCode} ${response.description || 'OK'}</p>\n`;
+
+                const responseContent = response.contents?.[0];
+
+                if (responseContent?.schema) {
+                    let responseSchema = responseContent.schema;
+
+                    if (responseSchema.$ref) {
+                        responseSchema = getBundledSchema(data, responseSchema.$ref);
+                    }
+
+                    if (responseSchema) {
+                        if (responseSchema.title) {
+                            doc += `\n<h3>${responseSchema.title}</h3>\n`;
+                        }
+
+                        if (responseSchema.properties) {
+                            doc += `\n<table border="1" cellpadding="8" cellspacing="0" width="100%">
+<tr>
+<th align="left"><strong>Property</strong></th>
+<th align="left"><strong>Type</strong></th>
+<th align="left"><strong>Description</strong></th>
+</tr>`;
+
+                            for (const [propName, propData] of Object.entries(responseSchema.properties)) {
+                                let type = Array.isArray(propData.type) ? propData.type.join(' | ') : (propData.type || 'object');
+                                if (propData.format) {
+                                    type += ` (${propData.format})`;
+                                }
+                                const desc = propData.description || '';
+
+                                doc += `
+<tr>
+<td>${propName}</td>
+<td>${type}</td>
+<td>${desc}</td>
+</tr>`;
+                            }
+
+                            doc += `\n</table>\n`;
+                        }
+                    }
+                }
+            }
+
+            doc += `\n</body>\n</html>`;
+            return doc;
+        }
+
         async function startDownload() {
             const tocJson = document.getElementById('tocJson').value.trim();
 
@@ -496,10 +628,12 @@
 
                     const nodeData = await fetchNode(projectId, item.slug, token);
                     const html = convertToHTML(item, nodeData);
+                    const doc = convertToDoc(item, nodeData);
 
                     const filename = item.slug;
                     downloadedDocs[filename] = {
                         html: html,
+                        doc: doc,
                         item: item,
                         rawData: nodeData
                     };
@@ -542,13 +676,18 @@
 
             // Create folders
             const htmlFolder = zip.folder('html');
+            const docFolder = zip.folder('doc');
             const jsonFolder = zip.folder('json');
 
-            // Add both HTML and JSON files for each document
+            // Add HTML, DOC, and JSON files for each document
             for (const [filename, doc] of Object.entries(downloadedDocs)) {
                 // HTML file
                 htmlFolder.file(`${filename}.html`, doc.html);
                 log(`  Added: html/${filename}.html`, 'info');
+
+                // DOC file
+                docFolder.file(`${filename}.doc`, doc.doc);
+                log(`  Added: doc/${filename}.doc`, 'info');
 
                 // JSON file
                 jsonFolder.file(`${filename}.json`, JSON.stringify(doc.rawData, null, 2));
@@ -563,11 +702,15 @@ Total documents: ${Object.keys(downloadedDocs).length}
 
 ## Package Contents
 
-This ZIP contains two formats for each API endpoint:
+This ZIP contains three formats for each API endpoint:
 
 ### HTML Files (html/)
 Formatted HTML pages that match the Stoplight documentation style.
 Open these files in any web browser to view the documentation.
+
+### DOC Files (doc/)
+Simple Word-compatible documents that can be imported into Google Docs or Microsoft Word.
+These files are optimized for easy editing and collaboration.
 
 ### JSON Files (json/)
 Raw JSON responses from the Stoplight API.
@@ -579,14 +722,14 @@ ${Object.entries(downloadedDocs).map(([filename, doc]) =>
     `- ${filename}
   - Title: ${doc.item.title}
   - Type: ${doc.item.type}
-  - Files: html/${filename}.html, json/${filename}.json`
+  - Files: html/${filename}.html, doc/${filename}.doc, json/${filename}.json`
 ).join('\n')}
 
 ## How to Use
 
 1. **View HTML Documentation**: Open any file in the html/ folder with a web browser
-2. **Access Raw Data**: JSON files in the json/ folder contain complete API specifications
-3. **Import to Google Docs**: HTML files can be imported into Google Docs for further editing
+2. **Edit in Word/Google Docs**: Import any .doc file from the doc/ folder into Word or Google Docs
+3. **Access Raw Data**: JSON files in the json/ folder contain complete API specifications
 
 Generated by Stoplight Documentation Downloader
 `;
@@ -612,6 +755,7 @@ Generated by Stoplight Documentation Downloader
 
             log('✅ ZIP package downloaded!', 'success');
             log(`   HTML files: ${Object.keys(downloadedDocs).length}`, 'success');
+            log(`   DOC files: ${Object.keys(downloadedDocs).length}`, 'success');
             log(`   JSON files: ${Object.keys(downloadedDocs).length}`, 'success');
         }
     </script>
