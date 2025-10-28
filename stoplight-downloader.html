@@ -128,7 +128,7 @@
 <body>
     <div class="container">
         <h1>📚 Stoplight Documentation Downloader</h1>
-        <p class="subtitle">Upload table of contents JSON and download all docs as HTML + JSON</p>
+        <p class="subtitle">Upload table of contents JSON and download all docs organized by endpoint (HTML, DOC, JSON)</p>
 
         <div class="alert">
             <strong>⚠️ IMPORTANT - CORS Issue Fixed!</strong><br>
@@ -641,8 +641,9 @@
                     const html = convertToHTML(item, nodeData);
                     const doc = convertToDoc(item, nodeData);
 
-                    // Remove ID prefix from slug (e.g., "44005txnd7kj0-update-service-agreement" -> "update-service-agreement")
-                    const filename = item.slug.includes('-') ? item.slug.substring(item.slug.indexOf('-') + 1) : item.slug;
+                    // Remove ID prefix from slug (e.g., "44005txnd7kj0-update-service-agreement-by-id" -> "update-service-agreement-by-id")
+                    // The ID prefix is alphanumeric characters followed by a dash
+                    const filename = item.slug.replace(/^[a-z0-9]+-/, '');
                     downloadedDocs[filename] = {
                         html: html,
                         doc: doc,
