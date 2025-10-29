@@ -1,0 +1,21 @@
+{
+  "id": "x30awh4dmpeu1",
+  "branch_node_id": -1,
+  "type": "http_operation",
+  "uri": "/reference/ServiceAgreements.yaml/paths/~1v1~1service-agreements~1{id}~1properties/post",
+  "slug": "x30awh4dmpeu1-add-properties-to-service-agreement",
+  "title": "Add Properties to Service Agreement",
+  "summary": "",
+  "project_id": "cHJqOjI1ODM4Mw",
+  "branch_id": "YnI6ODExNjI5Nw",
+  "branch": "main",
+  "links": {
+    "export_url": "https://stoplight.io/api/v1/projects/buildops/service-agreements-workbook/nodes/reference/ServiceAgreements.yaml/paths/~1v1~1service-agreements~1%7Bid%7D~1properties/post?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL3N0b3BsaWdodC5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWRlZmF1bHQtcm9sZSI6IndvcmtzcGFjZV91c2VyIiwieC1oYXN1cmEtYWxsb3dlZC1yb2xlcyI6WyJ3b3Jrc3BhY2VfdXNlciJdLCJ4LWhhc3VyYS11c2VyLWlkIjoiNDAzNzc5IiwieC1oYXN1cmEtdXNlci1pcC1hZGRyZXNzIjoiMzUuMTkxLjc0LjE4NyIsIngtaGFzdXJhLXdvcmtzcGFjZS1pZCI6IjE2OTEwNSJ9LCJpYXQiOjE3NjE3NDg3OTgsImV4cCI6MTc2MTc0OTM5OCwiaXNzIjoic3RvcGxpZ2h0Iiwic3ViIjoiL3VzZXJzLzQwMzc3OSJ9.OEs9iNkwNlJR6dU3DVBPNnpyKUXlEPaUtDY8NkUsIc0&fromExportButton=true&snapshotType=http_operation",
+    "export_original_file_url": "https://stoplight.io/api/v1/projects/buildops/service-agreements-workbook/nodes/reference/ServiceAgreements.yaml/paths/~1v1~1service-agreements~1%7Bid%7D~1properties/post?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL3N0b3BsaWdodC5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWRlZmF1bHQtcm9sZSI6IndvcmtzcGFjZV91c2VyIiwieC1oYXN1cmEtYWxsb3dlZC1yb2xlcyI6WyJ3b3Jrc3BhY2VfdXNlciJdLCJ4LWhhc3VyYS11c2VyLWlkIjoiNDAzNzc5IiwieC1oYXN1cmEtdXNlci1pcC1hZGRyZXNzIjoiMzUuMTkxLjc0LjE4NyIsIngtaGFzdXJhLXdvcmtzcGFjZS1pZCI6IjE2OTEwNSJ9LCJpYXQiOjE3NjE3NDg3OTgsImV4cCI6MTc2MTc0OTM5OCwiaXNzIjoic3RvcGxpZ2h0Iiwic3ViIjoiL3VzZXJzLzQwMzc3OSJ9.OEs9iNkwNlJR6dU3DVBPNnpyKUXlEPaUtDY8NkUsIc0&fromExportButton=true&snapshotType=http_operation",
+    "export_bundled_file_url": "https://stoplight.io/api/v1/projects/buildops/service-agreements-workbook/nodes/reference/ServiceAgreements.yaml/paths/~1v1~1service-agreements~1%7Bid%7D~1properties/post?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJodHRwczovL3N0b3BsaWdodC5pby9qd3QvY2xhaW1zIjp7IngtaGFzdXJhLWRlZmF1bHQtcm9sZSI6IndvcmtzcGFjZV91c2VyIiwieC1oYXN1cmEtYWxsb3dlZC1yb2xlcyI6WyJ3b3Jrc3BhY2VfdXNlciJdLCJ4LWhhc3VyYS11c2VyLWlkIjoiNDAzNzc5IiwieC1oYXN1cmEtdXNlci1pcC1hZGRyZXNzIjoiMzUuMTkxLjc0LjE4NyIsIngtaGFzdXJhLXdvcmtzcGFjZS1pZCI6IjE2OTEwNSJ9LCJpYXQiOjE3NjE3NDg3OTgsImV4cCI6MTc2MTc0OTM5OCwiaXNzIjoic3RvcGxpZ2h0Iiwic3ViIjoiL3VzZXJzLzQwMzc3OSJ9.OEs9iNkwNlJR6dU3DVBPNnpyKUXlEPaUtDY8NkUsIc0&fromExportButton=true&snapshotType=http_operation&deref=optimizedBundle",
+    "mock_url": "https://stoplight.io/mocks/buildops/service-agreements-workbook/523634887"
+  },
+  "outbound_edges": [],
+  "inbound_edges": [],
+  "data": "{\"id\":\"x30awh4dmpeu1\",\"iid\":\"post-v1-service-agreements-id-properties\",\"method\":\"post\",\"path\":\"/v1/service-agreements/{id}/properties\",\"summary\":\"Add Properties to Service Agreement\",\"extensions\":{\"x-stoplight\":{\"id\":\"x30awh4dmpeu1\"}},\"tags\":[],\"securityDeclarationType\":\"inheritedFromService\",\"request\":{\"body\":{\"$ref\":\"#/__bundled__/a4c186c579574\"},\"path\":[{\"$ref\":\"#/__bundled__/0adfa3976b5f9\"}]},\"responses\":[],\"security\":[],\"servers\":[{\"$ref\":\"#/__bundled__/cf6e44a221558\"}],\"callbacks\":[],\"__bundled__\":{\"a4c186c579574\":{\"id\":\"a4c186c579574\",\"contents\":[{\"$ref\":\"#/__bundled__/941fe1794a407\"}]},\"941fe1794a407\":{\"id\":\"941fe1794a407\",\"encodings\":[],\"mediaType\":\"application/json\",\"examples\":[],\"schema\":{\"$ref\":\"#/__bundled__/545352ba977ad\"}},\"545352ba977ad\":{\"type\":\"array\",\"items\":{\"type\":\"string\",\"x-stoplight\":{\"id\":\"3iug5i7y1ql0k\"}},\"x-stoplight\":{\"id\":\"545352ba977ad\"}},\"0adfa3976b5f9\":{\"id\":\"0adfa3976b5f9\",\"name\":\"id\",\"style\":\"simple\",\"required\":true,\"explicitProperties\":[\"schema\",\"name\",\"in\",\"required\"],\"examples\":[],\"schema\":{\"$ref\":\"#/__bundled__/975ec0370738e\"}},\"975ec0370738e\":{\"type\":\"string\",\"x-stoplight\":{\"id\":\"975ec0370738e\"}},\"cf6e44a221558\":{\"id\":\"cf6e44a221558\",\"url\":\"http://localhost:3000\"}}}"
+}
