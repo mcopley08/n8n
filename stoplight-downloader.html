@@ -670,12 +670,21 @@ td { padding: 10px; border: 1px solid #e1e4e8; vertical-align: top; }
 
             let downloaded = 0;
             let failed = 0;
+            let skipped = 0;
 
             for (const item of items) {
                 try {
                     log(`Downloading: ${item.title} (${item.slug})`, 'info');
 
                     const nodeData = await fetchNode(projectId, item.slug, token);
+
+                    // Skip if this is not an API endpoint (e.g., schemas, models)
+                    if (nodeData.type !== 'http_operation') {
+                        log(`⊘ Skipped: ${item.title} (type: ${nodeData.type}) - not an API endpoint`, 'warning');
+                        skipped++;
+                        continue;
+                    }
+
                     const html = convertToHTML(item, nodeData);
                     const doc = convertToDoc(item, nodeData);
 
@@ -706,10 +715,15 @@ td { padding: 10px; border: 1px solid #e1e4e8; vertical-align: top; }
             log('', 'info');
             log(`✅ Download complete!`, 'success');
             log(`   Downloaded: ${downloaded}/${items.length}`, 'success');
+            log(`   Skipped: ${skipped} (non-endpoint items like schemas)`, skipped > 0 ? 'warning' : 'info');
             log(`   Failed: ${failed}`, failed > 0 ? 'error' : 'success');
             log(`   Duration: ${duration}s`, 'info');
             log('', 'info');
-            log('💡 Click "Download ZIP Package" to save all files', 'info');
+            if (downloaded > 0) {
+                log('💡 Click "Download ZIP Package" to save all files', 'info');
+            } else {
+                log('⚠️  No API endpoints were downloaded. Make sure your TOC includes actual endpoints (POST, GET, etc.), not just schema definitions.', 'warning');
+            }
 
             document.getElementById('downloadBtn').disabled = false;
             document.getElementById('saveBtn').disabled = false;
@@ -717,7 +731,7 @@ td { padding: 10px; border: 1px solid #e1e4e8; vertical-align: top; }
 
         async function savePackage() {
             if (Object.keys(downloadedDocs).length === 0) {
-                alert('No documents to save! Please download first.');
+                alert('No API endpoints to save!\n\nMake sure your TOC includes actual API endpoints (POST, GET, PUT, DELETE, etc.) and not just schema definitions.\n\nLook for items with HTTP methods in Stoplight.');
                 return;
             }
 
