@@ -296,10 +296,83 @@
             return data.__bundled__?.[id];
         }
 
+        // Resolve request body by following $ref chains to get the actual schema
+        function resolveRequestBody(data) {
+            if (!data.request?.body) return null;
+
+            let body = data.request.body;
+
+            // If body has a direct schema, return it
+            if (body.contents?.[0]?.schema) {
+                return body.contents[0].schema;
+            }
+
+            // If body is a $ref, resolve it
+            if (body.$ref) {
+                const bodyBundle = getBundledSchema(data, body.$ref);
+                if (!bodyBundle) return null;
+
+                // Get contents from the bundle
+                if (bodyBundle.contents?.[0]) {
+                    let content = bodyBundle.contents[0];
+
+                    // If content is a $ref, resolve it
+                    if (content.$ref) {
+                        content = getBundledSchema(data, content.$ref);
+                        if (!content) return null;
+                    }
+
+                    // Get schema from content
+                    if (content.schema) {
+                        let schema = content.schema;
+
+                        // If schema is a $ref, resolve it
+                        if (schema.$ref) {
+                            schema = getBundledSchema(data, schema.$ref);
+                        }
+
+                        return schema;
+                    }
+                }
+            }
+
+            return null;
+        }
+
         function renderSchemaTable(schema, data, title = '') {
-            if (!schema || !schema.properties) return '';
+            if (!schema) return '';
 
             let html = title ? `<div class="schema-title">${title}</div>` : '';
+
+            // Handle array types
+            if (schema.type === 'array') {
+                html += `<div style="margin-bottom: 15px;">
+                    <strong>Type:</strong> <span class="property-type">array</span><br>
+                    <strong>Items:</strong> <span class="property-type">${schema.items?.type || 'object'}</span>
+                    ${schema.description ? `<br><strong>Description:</strong> ${schema.description}` : ''}
+                </div>`;
+
+                // If items have properties, show them
+                if (schema.items?.properties) {
+                    html += renderSchemaTable(schema.items, data, 'Array Item Properties');
+                }
+
+                return html;
+            }
+
+            // Handle simple types (string, number, boolean, etc.)
+            if (!schema.properties) {
+                if (schema.type) {
+                    html += `<div style="margin-bottom: 15px;">
+                        <strong>Type:</strong> <span class="property-type">${schema.type}</span>
+                        ${schema.format ? `<span class="property-format">${schema.format}</span>` : ''}
+                        ${schema.description ? `<br><strong>Description:</strong> ${schema.description}` : ''}
+                    </div>`;
+                }
+                return html;
+            }
+
+            // Handle object types with properties
             html += `<table class="property-table">
                 <thead>
                     <tr>
@@ -402,10 +475,11 @@
             html += `</div>`;
 
             // Request Body Section
-            if (data.request?.body?.contents?.[0]?.schema) {
-                const requestSchema = data.request.body.contents[0].schema;
+            const requestSchema = resolveRequestBody(data);
+            if (requestSchema) {
                 let resolvedSchema = requestSchema;
 
+                // If the schema itself is still a $ref, resolve it
                 if (requestSchema.$ref) {
                     resolvedSchema = getBundledSchema(data, requestSchema.$ref);
                 }
@@ -446,8 +520,38 @@
         }
 
         function renderDocSchemaTable(schema, data, processedRefs = new Set()) {
-            if (!schema || !schema.properties) return '';
+            if (!schema) return '';
 
+            // Handle array types
+            if (schema.type === 'array') {
+                let html = `<p style="margin: 10px 0;">
+                    <strong>Type:</strong> array<br>
+                    <strong>Items:</strong> ${schema.items?.type || 'object'}
+                    ${schema.description ? `<br><strong>Description:</strong> ${schema.description}` : ''}
+                </p>`;
+
+                // If items have properties, show them
+                if (schema.items?.properties) {
+                    html += `<h4>Array Item Properties</h4>`;
+                    html += renderDocSchemaTable(schema.items, data, processedRefs);
+                }
+
+                return html;
+            }
+
+            // Handle simple types (string, number, boolean, etc.)
+            if (!schema.properties) {
+                if (schema.type) {
+                    return `<p style="margin: 10px 0;">
+                        <strong>Type:</strong> ${schema.type}
+                        ${schema.format ? ` (${schema.format})` : ''}
+                        ${schema.description ? `<br><strong>Description:</strong> ${schema.description}` : ''}
+                    </p>`;
+                }
+                return '';
+            }
+
+            // Handle object types with properties
             let html = `<table border="1" cellpadding="8" cellspacing="0" width="100%" style="border-collapse: collapse; margin-top: 10px;">
 <tr style="background-color: #f6f8fa;">
 <th align="left" style="padding: 10px; width: 200px;"><strong>Property</strong></th>
@@ -564,12 +668,13 @@ td { padding: 10px; border: 1px solid #e1e4e8; vertical-align: top; }
             }
 
             // Request Body Section
-            if (data.request?.body?.contents?.[0]?.schema) {
+            const requestSchema = resolveRequestBody(data);
+            if (requestSchema) {
                 doc += `\n<h2>Request Body</h2>\n`;
 
-                const requestSchema = data.request.body.contents[0].schema;
                 let resolvedSchema = requestSchema;
 
+                // If the schema itself is still a $ref, resolve it
                 if (requestSchema.$ref) {
                     resolvedSchema = getBundledSchema(data, requestSchema.$ref);
                 }
