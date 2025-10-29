@@ -146,9 +146,6 @@
                 <li>Make sure you're accessing this page via http:// (not file://)</li>
                 <li>Upload your table of contents JSON file</li>
                 <li>Enter your Bearer token</li>
-                <li><strong>Enter your Project Slug</strong> in format: <code>workspace/project-name</code><br>
-                    <small style="color: #586069;">Find it in any export URL from your TOC JSON (e.g., "buildops/service-agreements-workbook")</small>
-                </li>
                 <li>Click "Download All Docs"</li>
                 <li>Download the ZIP package when complete</li>
             </ol>
@@ -165,12 +162,8 @@
         </div>
 
         <div class="input-group">
-            <label for="projectSlug">📦 Project Slug:</label>
-            <input type="text" id="projectSlug" value="" placeholder="e.g., workspace/project-name or buildops/service-agreements-workbook" />
-            <small style="color: #586069; display: block; margin-top: 5px;">
-                Format: <code>workspace/project-name</code> (NOT the encoded ID like "cHJqOjI4NDA0Mw")<br>
-                <strong>How to find:</strong> Open your TOC JSON, find any "export_url", and copy the part after "/projects/" (e.g., "buildops/service-agreements-workbook")
-            </small>
+            <label for="projectId">📦 Project ID:</label>
+            <input type="text" id="projectId" value="cHJqOjI1ODM4Mw" placeholder="e.g., cHJqOjI1ODM4Mw" />
         </div>
 
         <div class="button-group">
@@ -267,8 +260,8 @@
             return items;
         }
 
-        async function fetchNode(projectSlug, slug, token) {
-            const url = `https://stoplight.io/api/v1/projects/${projectSlug}/nodes/${slug}`;
+        async function fetchNode(projectId, slug, token) {
+            const url = `https://stoplight.io/api/v1/projects/${projectId}/nodes/${slug}`;
 
             const response = await fetch(url, {
                 method: 'GET',
@@ -866,15 +859,9 @@ td { padding: 10px; border: 1px solid #e1e4e8; vertical-align: top; }
                 return;
             }
 
-            const projectSlug = document.getElementById('projectSlug').value.trim();
-            if (!projectSlug) {
-                alert('Please enter the project slug in format: workspace/project-name\n\nFind it in any export URL from your TOC JSON.');
-                return;
-            }
-
-            // Validate project slug format
-            if (!projectSlug.includes('/')) {
-                alert('Invalid project slug format!\n\nExpected: workspace/project-name\nExample: buildops/service-agreements-workbook\n\nDo NOT use the encoded ID (cHJqOjI4NDA0Mw)');
+            const projectId = document.getElementById('projectId').value.trim();
+            if (!projectId) {
+                alert('Please enter the project ID!');
                 return;
             }
 
@@ -900,7 +887,7 @@ td { padding: 10px; border: 1px solid #e1e4e8; vertical-align: top; }
                 try {
                     log(`Downloading: ${item.title} (${item.slug})`, 'info');
 
-                    const nodeData = await fetchNode(projectSlug, item.slug, token);
+                    const nodeData = await fetchNode(projectId, item.slug, token);
 
                     // Handle different node types
                     let html, doc;
