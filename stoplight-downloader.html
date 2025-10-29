@@ -339,7 +339,7 @@
             return null;
         }
 
-        function renderSchemaTable(schema, data, title = '') {
+        function renderSchemaTable(schema, data, title = '', processedRefs = new Set()) {
             if (!schema) return '';
 
             let html = title ? `<div class="schema-title">${title}</div>` : '';
@@ -354,7 +354,7 @@
 
                 // If items have properties, show them
                 if (schema.items?.properties) {
-                    html += renderSchemaTable(schema.items, data, 'Array Item Properties');
+                    html += renderSchemaTable(schema.items, data, 'Array Item Properties', processedRefs);
                 }
 
                 return html;
@@ -373,6 +373,9 @@
             }
 
             // Handle object types with properties
+            // Collect nested objects to render after the main table
+            const nestedObjects = [];
+
             html += `<table class="property-table">
                 <thead>
                     <tr>
@@ -390,11 +393,28 @@
                 const desc = propData.description || '';
 
                 // Resolve $ref if present
+                let resolvedSchema = null;
                 if (propData.$ref) {
-                    const refSchema = getBundledSchema(data, propData.$ref);
-                    if (refSchema?.title) {
-                        type = refSchema.title;
+                    resolvedSchema = getBundledSchema(data, propData.$ref);
+                    if (resolvedSchema?.title) {
+                        type = resolvedSchema.title;
                     }
+                    // Track nested object for later rendering
+                    if (resolvedSchema?.properties && !processedRefs.has(propData.$ref)) {
+                        processedRefs.add(propData.$ref);
+                        nestedObjects.push({
+                            name: propName,
+                            title: resolvedSchema.title || propName,
+                            schema: resolvedSchema
+                        });
+                    }
+                } else if (propData.type === 'object' && propData.properties) {
+                    // Inline object definition
+                    nestedObjects.push({
+                        name: propName,
+                        title: propName,
+                        schema: propData
+                    });
                 }
 
                 html += `<tr>
@@ -405,7 +425,95 @@
             }
 
             html += `</tbody></table>`;
+
+            // Render nested objects after the main table
+            for (const nested of nestedObjects) {
+                html += `<div class="nested-schema">
+                    <div class="schema-title">${nested.name} (${nested.title})</div>
+                    ${renderSchemaTable(nested.schema, data, '', processedRefs)}
+                </div>`;
+            }
+
             return html;
+        }
+
+        function convertSchemaToHTML(item, nodeData) {
+            const dataStr = nodeData.data;
+            const schema = typeof dataStr === 'string' ? parseDataString(dataStr) : dataStr;
+
+            if (!schema) {
+                return `<html><body><h1>Error parsing schema</h1><pre>${JSON.stringify(nodeData, null, 2)}</pre></body></html>`;
+            }
+
+            let html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${item.title} - Schema Documentation</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #24292e; background: #f6f8fa; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .endpoint-header { background: white; padding: 30px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .endpoint-title { font-size: 32px; font-weight: 700; margin-bottom: 10px; color: #24292e; }
+        .schema-type { font-size: 14px; color: #586069; text-transform: uppercase; font-weight: 600; margin-top: 10px; }
+        .section { background: white; padding: 30px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .section-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #e1e4e8; }
+        .property-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .property-table th { text-align: left; padding: 12px; background: #f6f8fa; font-weight: 600; font-size: 13px; color: #586069; text-transform: uppercase; border-bottom: 2px solid #e1e4e8; }
+        .property-table td { padding: 12px; border-bottom: 1px solid #e1e4e8; vertical-align: top; }
+        .property-name { font-family: 'Monaco', monospace; font-weight: 600; color: #0366d6; font-size: 14px; }
+        .property-type { display: inline-block; padding: 2px 8px; background: #f1f8ff; color: #0366d6; border-radius: 3px; font-family: 'Monaco', monospace; font-size: 12px; font-weight: 500; }
+        .property-format { display: inline-block; padding: 2px 8px; background: #fff5b1; color: #735c0f; border-radius: 3px; font-family: 'Monaco', monospace; font-size: 11px; margin-left: 5px; }
+        .nested-schema { margin-left: 20px; padding-left: 15px; border-left: 3px solid #e1e4e8; margin-top: 10px; }
+        .schema-title { font-size: 16px; font-weight: 600; margin-bottom: 10px; color: #24292e; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="endpoint-header">
+            <h1 class="endpoint-title">${schema.title || item.title}</h1>
+            <div class="schema-type">Schema Definition</div>
+        </div>
+
+        <div class="section">
+            <h2 class="section-title">Properties</h2>
+            ${renderSchemaTable(schema, {}, '')}
+        </div>
+    </div>
+</body>
+</html>`;
+            return html;
+        }
+
+        function convertSchemaToDoc(item, nodeData) {
+            const dataStr = nodeData.data;
+            const schema = typeof dataStr === 'string' ? parseDataString(dataStr) : dataStr;
+
+            if (!schema) {
+                return `<html><body><h1>Error parsing schema</h1></body></html>`;
+            }
+
+            let doc = `<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>${schema.title || item.title} - Schema Documentation</title>
+</head>
+<body>
+
+<h1>${schema.title || item.title}</h1>
+<p><strong>Type:</strong> Schema Definition</p>
+
+<hr>
+
+<h2>Properties</h2>
+
+${renderDocSchemaTable(schema, {}, new Set())}
+
+</body>
+</html>`;
+            return doc;
         }
 
         function convertToHTML(item, nodeData) {
@@ -585,14 +693,12 @@
                             });
                         }
                     }
-                }
-
-                // Check if this is an object type with properties
-                if (resolvedPropSchema.properties && !propData.$ref) {
+                } else if (propData.type === 'object' && propData.properties) {
+                    // Inline object definition
                     nestedSchemas.push({
                         name: propName,
                         title: propName,
-                        schema: resolvedPropSchema
+                        schema: propData
                     });
                 }
 
@@ -610,7 +716,7 @@
             for (const nested of nestedSchemas) {
                 html += `
 <div style="margin-left: 20px; margin-top: 15px; padding-left: 15px; border-left: 3px solid #e1e4e8;">
-<h4 style="margin-bottom: 10px;">${nested.title}</h4>
+<h4 style="margin-bottom: 10px;">${nested.name} (${nested.title})</h4>
 ${renderDocSchemaTable(nested.schema, data, processedRefs)}
 </div>`;
             }
@@ -783,15 +889,22 @@ td { padding: 10px; border: 1px solid #e1e4e8; vertical-align: top; }
 
                     const nodeData = await fetchNode(projectId, item.slug, token);
 
-                    // Skip if this is not an API endpoint (e.g., schemas, models)
-                    if (nodeData.type !== 'http_operation') {
-                        log(`⊘ Skipped: ${item.title} (type: ${nodeData.type}) - not an API endpoint`, 'warning');
+                    // Handle different node types
+                    let html, doc;
+                    if (nodeData.type === 'http_operation') {
+                        // API endpoint
+                        html = convertToHTML(item, nodeData);
+                        doc = convertToDoc(item, nodeData);
+                    } else if (nodeData.type === 'model') {
+                        // Schema definition
+                        html = convertSchemaToHTML(item, nodeData);
+                        doc = convertSchemaToDoc(item, nodeData);
+                    } else {
+                        // Unknown type, skip
+                        log(`⊘ Skipped: ${item.title} (type: ${nodeData.type}) - unsupported type`, 'warning');
                         skipped++;
                         continue;
                     }
-
-                    const html = convertToHTML(item, nodeData);
-                    const doc = convertToDoc(item, nodeData);
 
                     // Remove ID prefix from slug (e.g., "44005txnd7kj0-update-service-agreement-by-id" -> "update-service-agreement-by-id")
                     // The ID prefix is alphanumeric characters followed by a dash
